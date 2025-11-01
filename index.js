@@ -1,4 +1,4 @@
-// index.js (WhatsApp Bulk Sender with Auto-Reconnect)
+// index.js (WhatsApp Bulk Sender with Enhanced Auto-Reconnect)
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -67,6 +67,7 @@ app.get("/", (req, res) => {
 const activeClients = new Map();
 const activeTasks = new Map();
 const userSessions = new Map();
+const messageQueues = new Map(); // 🔄 NEW: Message queue for each session
 
 // Utility functions
 function safeDeleteFile(p) {
@@ -104,6 +105,87 @@ function getUserSession(userId) {
     return userSession;
 }
 
+// 🛡️ ENHANCED: Connection stability check
+function isConnectionHealthy(sessionInfo) {
+    if (!sessionInfo.registered || !sessionInfo.client) return false;
+    
+    // Check if last activity was within 2 minutes
+    const timeSinceLastActivity = Date.now() - sessionInfo.lastActivity.getTime();
+    return timeSinceLastActivity < 120000;
+}
+
+// 🆕 NEW: Queue management for uninterrupted sending
+function initializeMessageQueue(sessionId) {
+    if (!messageQueues.has(sessionId)) {
+        messageQueues.set(sessionId, {
+            messages: [],
+            isProcessing: false,
+            retryCount: 0,
+            maxRetries: 3
+        });
+    }
+    return messageQueues.get(sessionId);
+}
+
+// 🆕 NEW: Process message queue
+async function processMessageQueue(sessionInfo) {
+    const sessionId = sessionInfo.sessionId;
+    const queue = messageQueues.get(sessionId);
+    
+    if (!queue || queue.isProcessing || queue.messages.length === 0) return;
+    
+    queue.isProcessing = true;
+    
+    while (queue.messages.length > 0 && !queue.stopRequested) {
+        const messageJob = queue.messages[0];
+        
+        try {
+            // 🛡️ Connection health check before each message
+            if (!isConnectionHealthy(sessionInfo)) {
+                logger.warn(`🔄 Connection unhealthy, attempting reconnect before sending...`);
+                await initializeWhatsAppSession(sessionInfo, true);
+                await delay(3000); // Wait for reconnection
+            }
+            
+            await sessionInfo.client.sendMessage(messageJob.recipient, { text: messageJob.text });
+            
+            // Success - remove from queue
+            queue.messages.shift();
+            queue.retryCount = 0; // Reset retry count on success
+            
+            // Update task progress
+            if (messageJob.taskId && activeTasks.has(messageJob.taskId)) {
+                const task = activeTasks.get(messageJob.taskId);
+                task.sentMessages++;
+                task.lastUpdate = new Date();
+                task.lastSuccessTime = new Date();
+            }
+            
+            sessionInfo.lastActivity = new Date();
+            
+        } catch (sendErr) {
+            logger.error(`[Queue] Send error for ${sessionId}:`, sendErr.message);
+            queue.retryCount++;
+            
+            if (queue.retryCount >= queue.maxRetries) {
+                logger.error(`[Queue] Max retries exceeded, removing message:`, messageJob);
+                queue.messages.shift();
+                queue.retryCount = 0;
+            } else {
+                // Wait before retry
+                await delay(2000);
+            }
+        }
+        
+        // Respect delay between messages
+        if (messageJob.delayMs > 0) {
+            await delay(messageJob.delayMs);
+        }
+    }
+    
+    queue.isProcessing = false;
+}
+
 // Enhanced session initialization with auto-reconnect
 async function initializeWhatsAppSession(sessionInfo, isReconnect = false) {
     const { sessionId, authPath, number, ownerId } = sessionInfo;
@@ -123,7 +205,7 @@ async function initializeWhatsAppSession(sessionInfo, isReconnect = false) {
             },
             printQRInTerminal: true,
             logger: pino({ 
-                level: "error", // Reduce log noise
+                level: "error",
                 transport: {
                     target: 'pino-pretty',
                     options: { colorize: true }
@@ -135,17 +217,12 @@ async function initializeWhatsAppSession(sessionInfo, isReconnect = false) {
             markOnlineOnConnect: true,
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 30000, // Send keep-alive every 30 seconds
+            keepAliveIntervalMs: 30000,
             retryRequestDelayMs: 2000,
             maxRetries: 10,
             emitOwnEvents: true,
             generateHighQualityLinkPreview: true,
-            // Connection stability options
-            fireInitQueries: true,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
-            }
+            fireInitQueries: true
         });
 
         // Update session info
@@ -176,6 +253,15 @@ async function initializeWhatsAppSession(sessionInfo, isReconnect = false) {
                 
                 // Start keep-alive mechanism
                 startKeepAlive(sessionInfo);
+                
+                // 🆕 NEW: Resume any pending message queues
+                if (messageQueues.has(sessionId)) {
+                    const queue = messageQueues.get(sessionId);
+                    if (queue.messages.length > 0) {
+                        logger.info(`🔄 Resuming ${queue.messages.length} queued messages for ${sessionId}`);
+                        processMessageQueue(sessionInfo);
+                    }
+                }
                 
                 // Fetch groups immediately after connection
                 await fetchSessionGroups(sessionInfo);
@@ -246,6 +332,13 @@ async function initializeWhatsAppSession(sessionInfo, isReconnect = false) {
             sessionInfo.lastActivity = new Date();
         });
 
+        // 🆕 NEW: Monitor for any connection issues
+        waClient.ev.on("connection.phone-connection", (phoneConnection) => {
+            if (phoneConnection?.connected === false) {
+                logger.warn(`📱 Phone connection lost for ${sessionId}`);
+            }
+        });
+
         return waClient;
 
     } catch (error) {
@@ -290,7 +383,6 @@ function startKeepAlive(sessionInfo) {
     sessionInfo.keepAliveInterval = setInterval(async () => {
         try {
             if (sessionInfo.client && sessionInfo.registered) {
-                // Send presence update to keep connection alive
                 await sessionInfo.client.sendPresenceUpdate('available');
                 
                 // Periodically update last seen
@@ -309,7 +401,6 @@ function startKeepAlive(sessionInfo) {
     sessionInfo.activityInterval = setInterval(async () => {
         try {
             if (sessionInfo.client && sessionInfo.registered) {
-                // Simulate user activity by updating profile status
                 await sessionInfo.client.updateProfileStatus('Active via Bulk Sender');
                 logger.debug(`🔄 Activity simulation for ${sessionInfo.sessionId}`);
             }
@@ -317,6 +408,14 @@ function startKeepAlive(sessionInfo) {
             logger.debug(`Activity simulation failed for ${sessionInfo.sessionId}:`, error.message);
         }
     }, 120000); // Every 2 minutes
+    
+    // 🆕 NEW: Connection health monitor every 30 seconds
+    sessionInfo.healthCheckInterval = setInterval(async () => {
+        if (!isConnectionHealthy(sessionInfo) && sessionInfo.registered) {
+            logger.warn(`🩺 Connection health check failed for ${sessionInfo.sessionId}, forcing reconnect...`);
+            await initializeWhatsAppSession(sessionInfo, true);
+        }
+    }, 30000);
 }
 
 function stopKeepAlive(sessionInfo) {
@@ -327,6 +426,10 @@ function stopKeepAlive(sessionInfo) {
     if (sessionInfo.activityInterval) {
         clearInterval(sessionInfo.activityInterval);
         sessionInfo.activityInterval = null;
+    }
+    if (sessionInfo.healthCheckInterval) {
+        clearInterval(sessionInfo.healthCheckInterval);
+        sessionInfo.healthCheckInterval = null;
     }
 }
 
@@ -398,18 +501,17 @@ function startAutoReconnectService() {
             try {
                 // Check if session is registered but client is not connected
                 if (sessionInfo.registered && 
-                    sessionInfo.client && 
                     sessionInfo.forceReconnect !== false &&
-                    (Date.now() - sessionInfo.lastActivity.getTime() > 120000) // 2 minutes inactivity
+                    !isConnectionHealthy(sessionInfo)
                 ) {
-                    logger.warn(`🔄 Auto-reconnecting inactive session: ${sessionId}`);
+                    logger.warn(`🔄 Auto-reconnecting unhealthy session: ${sessionId}`);
                     await initializeWhatsAppSession(sessionInfo, true);
                 }
             } catch (error) {
                 logger.error(`Auto-reconnect failed for ${sessionId}:`, error);
             }
         });
-    }, 60000); // Check every minute
+    }, 45000); // Check every 45 seconds
 }
 
 // Start auto-reconnect service when server starts
@@ -438,7 +540,8 @@ app.get("/user-sessions", (req, res) => {
             totalGroups: info.groups ? info.groups.length : 0,
             lastActivity: info.lastActivity,
             connectionEstablished: info.connectionEstablished,
-            reconnectAttempts: info.reconnectAttempts || 0
+            reconnectAttempts: info.reconnectAttempts || 0,
+            queueSize: messageQueues.get(id)?.messages.length || 0 // 🆕 NEW: Queue status
         }));
 
     res.json({
@@ -449,6 +552,46 @@ app.get("/user-sessions", (req, res) => {
         lastActive: userSession.lastActive
     });
 });
+
+// 🛠️ FIXED: /groups endpoint - removed duplicate code and syntax errors
+app.get("/groups", async (req, res) => {
+    const { sessionId, userId } = req.query;
+    
+    if (!sessionId || !userId) {
+        return res.status(400).json({ error: "Session ID and User ID are required" });
+    }
+
+    if (!activeClients.has(sessionId)) {
+        return res.status(404).json({ error: "Session not found" });
+    }
+
+    const sessionInfo = activeClients.get(sessionId);
+    
+    if (sessionInfo.ownerId !== userId) {
+        return res.status(403).json({ error: "Access denied. This session does not belong to you." });
+    }
+
+    if (!sessionInfo.registered || sessionInfo.isConnecting) {
+        return res.status(400).json({ error: "Session not ready. Please wait for connection." });
+    }
+
+    try {
+        await fetchSessionGroups(sessionInfo);
+        
+        res.json({
+            success: true,
+            groups: sessionInfo.groups || [],
+            total: sessionInfo.groups ? sessionInfo.groups.length : 0,
+            cached: false
+        });
+
+    } catch (error) {
+        logger.error(`Error fetching groups for ${sessionId}:`, error);
+        res.status(500).json({ 
+            error: "Failed to fetch groups: " + (error.message || "Unknown error")
+        });
+    }
+}); // ✅ FIXED: Properly closed endpoint
 
 // Pair new number
 app.get("/code", async (req, res) => {
@@ -494,6 +637,7 @@ app.get("/code", async (req, res) => {
             
             // Create session info for already registered session
             const sessionInfo = {
+                sessionId: sessionId, // 🆕 NEW: Ensure sessionId is set
                 client: null,
                 number: num,
                 authPath: sessionPath,
@@ -514,6 +658,7 @@ app.get("/code", async (req, res) => {
             };
             
             activeClients.set(sessionId, sessionInfo);
+            initializeMessageQueue(sessionId); // 🆕 NEW: Initialize message queue
             
             // Initialize the client in background
             initializeWhatsAppSession(sessionInfo).catch(error => {
@@ -534,6 +679,7 @@ app.get("/code", async (req, res) => {
 
         // Create new session
         const sessionInfo = {
+            sessionId: sessionId, // 🆕 NEW: Ensure sessionId is set
             client: null,
             number: num,
             authPath: sessionPath,
@@ -542,7 +688,7 @@ app.get("/code", async (req, res) => {
             ownerId: userId,
             isConnecting: true,
             reconnectAttempts: 0,
-            maxReconnectAttempts: 10, // Increased reconnection attempts
+            maxReconnectAttempts: 10,
             deviceInfo: null,
             pairedAt: null,
             groups: [],
@@ -552,6 +698,7 @@ app.get("/code", async (req, res) => {
         };
 
         activeClients.set(sessionId, sessionInfo);
+        initializeMessageQueue(sessionId); // 🆕 NEW: Initialize message queue
 
         let connectionTimeout;
         let isResolved = false;
@@ -577,7 +724,7 @@ app.get("/code", async (req, res) => {
                 logger.warn(`⏰ Connection timeout for ${sessionId}`);
                 rejectRequest("Connection timeout. Please try again.");
             }
-        }, 180000); // Increased timeout to 3 minutes
+        }, 180000);
 
         // Initialize the session
         initializeWhatsAppSession(sessionInfo)
@@ -630,11 +777,12 @@ app.get("/code", async (req, res) => {
     } catch (err) {
         logger.error("❌ Session creation error:", err);
         activeClients.delete(sessionId);
+        messageQueues.delete(sessionId); // 🆕 NEW: Clean up queue
         return res.status(500).json({ error: err.message || "Server error" });
     }
 });
 
-// Enhanced send message with reconnection handling
+// 🚀 ENHANCED: Send message with queue system for uninterrupted sending
 app.post("/send-message", upload.single("messageFile"), async (req, res) => {
     const { sessionId, target, targetType, delaySec, prefix, userId, groupId } = req.body;
     const filePath = req.file?.path;
@@ -657,34 +805,6 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         return res.status(400).json({ error: "Session not ready. Please wait for connection." });
     }
 
-    // Ensure client is connected
-    if (!sessionInfo.client || !sessionInfo.registered) {
-        try {
-            logger.info(`🔄 Reinitializing client for sending messages: ${sessionId}`);
-            await initializeWhatsAppSession(sessionInfo, true);
-            // Wait for connection
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error("Connection timeout")), 30000);
-                sessionInfo.client.ev.on("connection.update", (update) => {
-                    if (update.connection === "open") {
-                        clearTimeout(timeout);
-                        resolve();
-                    }
-                });
-            });
-        } catch (error) {
-            safeDeleteFile(filePath);
-            return res.status(400).json({ error: "Failed to initialize session: " + error.message });
-        }
-    }
-
-    if ((!target && !groupId) || !filePath || !targetType || !delaySec) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const { client: waClient } = sessionInfo;
-    
     // Use groupId if provided, otherwise use target
     let finalTarget = target;
     if (groupId && targetType === "group") {
@@ -696,9 +816,6 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         return res.status(400).json({ error: "No target specified" });
     }
 
-    // SIMPLE TASK ID - Easy to remember and use for stopping
-    const taskId = `TASK_${Date.now()}`;
-
     let messages;
     try {
         messages = fs.readFileSync(filePath, "utf-8").split("\n").map(m => m.trim()).filter(Boolean);
@@ -707,6 +824,9 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         safeDeleteFile(filePath);
         return res.status(400).json({ error: "Invalid message file" });
     }
+
+    const taskId = `TASK_${Date.now()}`;
+    const delayMs = parseFloat(delaySec) * 1000;
 
     const taskInfo = {
         taskId,
@@ -722,123 +842,130 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         startTime: new Date(),
         lastUpdate: new Date(),
         groupId: groupId || null,
-        lastSuccessTime: new Date()
+        lastSuccessTime: new Date(),
+        usingQueue: true // 🆕 NEW: Mark as using queue system
     };
 
     activeTasks.set(taskId, taskInfo);
     
-    // RETURN TASK ID CLEARLY - This is what you need to stop the task
+    // 🆕 NEW: Add messages to queue instead of sending immediately
+    const queue = initializeMessageQueue(sessionId);
+    const recipient = taskInfo.targetType === "group"
+        ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
+        : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
+
+    messages.forEach((message, index) => {
+        let msg = message;
+        if (taskInfo.prefix) msg = `${taskInfo.prefix} ${msg}`;
+        
+        queue.messages.push({
+            text: msg,
+            recipient: recipient,
+            taskId: taskId,
+            delayMs: delayMs,
+            addedAt: new Date()
+        });
+    });
+
+    // Start processing the queue
+    processMessageQueue(sessionInfo);
+    
+    // RETURN TASK ID CLEARLY
     res.json({ 
         success: true,
         taskId: taskId,
-        status: "started", 
+        status: "queued", 
         totalMessages: messages.length,
-        message: `📨 Task STARTED! Use this ID to stop: ${taskId}`
+        queuedMessages: queue.messages.length,
+        message: `📨 Task QUEUED! ${messages.length} messages added to queue. Use ID to stop: ${taskId}`
     });
 
-    logger.info(`🚀 Task STARTED: ${taskId}`);
+    logger.info(`🚀 Task QUEUED: ${taskId}`);
     logger.info(`📝 Messages: ${messages.length}, Target: ${finalTarget}, Delay: ${delaySec}s, User: ${taskInfo.ownerId}`);
 
-    // Enhanced task execution with reconnection handling
-    (async () => {
-        let consecutiveErrors = 0;
-        const maxConsecutiveErrors = 5;
-        
-        try {
-            for (let index = 0; index < messages.length && !taskInfo.stopRequested; index++) {
-                try {
-                    let msg = messages[index];
-                    if (taskInfo.prefix) msg = `${taskInfo.prefix} ${msg}`;
-                    
-                    const recipient = taskInfo.targetType === "group"
-                        ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
-                        : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
-
-                    await waClient.sendMessage(recipient, { text: msg });
-
-                    taskInfo.sentMessages++;
-                    taskInfo.lastUpdate = new Date();
-                    taskInfo.lastSuccessTime = new Date();
-                    consecutiveErrors = 0;
-                    sessionInfo.lastActivity = new Date();
-                    
-                    // Show progress every 10 messages
-                    if (taskInfo.sentMessages % 10 === 0 || taskInfo.sentMessages === taskInfo.totalMessages) {
-                        logger.info(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
-                    }
-                    
-                } catch (sendErr) {
-                    logger.error(`[${taskId}] Send error:`, sendErr);
-                    consecutiveErrors++;
-                    taskInfo.error = sendErr?.message || String(sendErr);
-                    taskInfo.lastError = new Date();
-                    
-                    // Check if we need to reconnect
-                    if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected") || 
-                        sendErr.message?.includes("not connected") || consecutiveErrors >= maxConsecutiveErrors) {
-                        
-                        logger.warn(`[${taskId}] Attempting to reconnect due to errors...`);
-                        
-                        try {
-                            await initializeWhatsAppSession(sessionInfo, true);
-                            // Wait a bit for reconnection
-                            await delay(5000);
-                            consecutiveErrors = 0;
-                            logger.info(`[${taskId}] Reconnection attempted, continuing...`);
-                        } catch (reconnectError) {
-                            logger.error(`[${taskId}] Reconnection failed:`, reconnectError);
-                            taskInfo.stopRequested = true;
-                            taskInfo.error = "Session disconnected and reconnection failed.";
-                            break;
-                        }
-                    }
-                    
-                    if (consecutiveErrors >= maxConsecutiveErrors) {
-                        taskInfo.stopRequested = true;
-                        taskInfo.error = "Too many consecutive errors. Task stopped.";
-                        break;
-                    }
-                }
-
-                // Enhanced delay with interrupt capability
-                const waitMs = parseFloat(delaySec) * 1000;
-                const chunkSize = 1000; // Check every second
-                const chunks = Math.ceil(waitMs / chunkSize);
-                
-                for (let t = 0; t < chunks && !taskInfo.stopRequested; t++) {
-                    await delay(chunkSize);
-                }
-                
-                if (taskInfo.stopRequested) break;
-            }
-        } finally {
-            taskInfo.endTime = new Date();
-            taskInfo.isSending = false;
-            taskInfo.completed = !taskInfo.stopRequested;
-            safeDeleteFile(filePath);
-            
-            const status = taskInfo.stopRequested ? "STOPPED" : "COMPLETED";
-            logger.info(`[${taskId}] ${status}: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
-            
-            // Keep task in memory for 10 minutes for status checking
-            setTimeout(() => {
-                if (activeTasks.has(taskId)) {
-                    activeTasks.delete(taskId);
-                    logger.info(`[${taskId}] Removed from memory`);
-                }
-            }, 600000);
-        }
-    })();
+    safeDeleteFile(filePath);
 });
 
-// Other endpoints remain similar but with enhanced logging
-app.get("/groups", async (req, res) => {
-    const { sessionId, userId } = req.query;
+// 🆕 NEW: Enhanced task status with queue information
+app.get("/task-status", (req, res) => {
+    const { taskId } = req.query;
     
-    if (!sessionId || !userId) {
-        return res.status(400).json({ error: "Session ID and User ID are required" });
+    if (!taskId || !activeTasks.has(taskId)) {
+        return res.status(404).json({ error: "Task not found" });
+    }
+    
+    const task = activeTasks.get(taskId);
+    const queue = messageQueues.get(task.sessionId);
+    
+    res.json({
+        taskId: task.taskId,
+        status: task.isSending ? (task.stopRequested ? "stopping" : "sending") : "completed",
+        progress: {
+            sent: task.sentMessages,
+            total: task.totalMessages,
+            percentage: Math.round((task.sentMessages / task.totalMessages) * 100)
+        },
+        queueInfo: queue ? {
+            queued: queue.messages.filter(m => m.taskId === taskId).length,
+            processing: queue.isProcessing
+        } : null,
+        timing: {
+            start: task.startTime,
+            lastUpdate: task.lastUpdate,
+            end: task.endTime
+        },
+        usingQueue: task.usingQueue || false
+    });
+});
+
+// 🆕 NEW: Enhanced stop task that also clears queue
+app.post("/stop-task", upload.none(), async (req, res) => {
+    const { taskId, userId } = req.body;
+    
+    if (!taskId) return res.status(400).json({ error: "Task ID is required" });
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+    
+    if (!activeTasks.has(taskId)) {
+        return res.status(404).json({ error: "Task not found" });
     }
 
+    const task = activeTasks.get(taskId);
+    
+    if (task.ownerId !== userId) {
+        return res.status(403).json({ error: "Access denied. This task does not belong to you." });
+    }
+
+    // Stop the task
+    task.stopRequested = true;
+    task.isSending = false;
+    task.endTime = new Date();
+    
+    // 🆕 NEW: Also remove queued messages for this task
+    if (messageQueues.has(task.sessionId)) {
+        const queue = messageQueues.get(task.sessionId);
+        queue.messages = queue.messages.filter(msg => msg.taskId !== taskId);
+        logger.info(`🧹 Removed queued messages for task: ${taskId}`);
+    }
+    
+    logger.info(`⏹️ Task stopped: ${taskId}`);
+    
+    res.json({ 
+        success: true, 
+        message: `Task ${taskId} stopped successfully`,
+        finalProgress: {
+            sent: task.sentMessages,
+            total: task.totalMessages
+        }
+    });
+});
+
+// Enhanced session deletion
+app.post("/delete-session", upload.none(), async (req, res) => {
+    const { sessionId, userId } = req.body;
+    
+    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+    
     if (!activeClients.has(sessionId)) {
         return res.status(404).json({ error: "Session not found" });
     }
@@ -849,64 +976,6 @@ app.get("/groups", async (req, res) => {
         return res.status(403).json({ error: "Access denied. This session does not belong to you." });
     }
 
-    if (!sessionInfo.registered || sessionInfo.isConnecting) {
-        return res.status(400).json({ error: "Session not ready. Please wait for connection." });
-    }
-
-    try {
-        await fetchSessionGroups(sessionInfo);
-        
-        res.json({
-            success: true,
-            groups: sessionInfo.groups || [],
-            total: sessionInfo.groups ? sessionInfo.groups.length : 0,
-            cached: false
-        });
-
-    } catch (error) {
-        logger.error(`Error fetching groups for ${sessionId}:`, error);
-        res.status.status(500).json({ 
-            error: "Failed to fetch groups: "(500).json({ 
-            error: "Failed to fetch groups: " + ( + (error.message || "Unknown error")
-        });
-    }
-});
-
-// Enhancederror.message || "Unknown error")
-        });
-    }
-});
-
-// Enhanced session deletion
-app.post("/delete session deletion
-app.post("/delete-session", upload.none(), async (req-session", upload.none(),, res) => {
-    const { session async (req, res) => {
-    const { sessionId, userId } = req.body;
-    
-    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
-    if (!userId) return res.status(400).json({ error: "User ID is required" });
-    
-    if (!activeClients.has(sessionId)) {
-        return res.status(404).json({ error: "Session not found" });
-    }
-
-    const sessionInfo = activeClientsId, userId } = req.body;
-    
-    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
-    if (!userId) return res.status(400).json({ error: "User ID is required" });
-    
-    if (!activeClients.has(sessionId)) {
-        return res.status(404).json({ error: "Session not found" });
-    }
-
-    const sessionInfo = activeClients.get(sessionId.get(sessionId);
-    
-    if (sessionInfo);
-    
-    if (.ownerId !== userId) {
-        return res.status(403).json({ error: "Access denied. This session does not belong to you." });
-    }
-
     try {
         // Stop keep-alive
         stopKeepAlive(sessionInfo);
@@ -914,175 +983,105 @@ app.post("/delete-session", upload.none(), async (req-session", upload.none(),, 
         // Mark session for no reconnection
         sessionInfo.forceReconnect = false;
         
+        // 🆕 NEW: Stop all tasks for this session
+        activeTasks.forEach((task, taskId) => {
+            if (task.sessionId === sessionId) {
+                task.stopRequested = true;
+                task.isSending = false;
+            }
+        });
+        
+        // 🆕 NEW: Clear message queue
+        if (messageQueues.has(sessionId)) {
+            messageQueues.delete(sessionId);
+        }
+        
         if (sessionInfo.client) {
             sessionInfo.client.end();
             logger.info(`🔌 Disconnected client for session: ${sessionId}`);
         }
         
         // Delete session files
-        if (sessionInfo.authsessionInfo.ownerId !== userId) {
-        return res.status(403).json({ error: "Access denied. This session does not belong to you." });
-    }
-
-    try {
-        // Stop keep-alive
-        stopKeepAlive(sessionInfo);
-        
-        // Mark session for no reconnection
-        sessionInfo.forceReconnect = false;
-        
-        if (sessionInfo.client) {
-            sessionInfo.client.end();
-            logger.info(`🔌 Disconnected client for session: ${sessionId}`);
-        }
-        
-        // Delete session files
-        if (sessionInfo.authPathPath && && fs fs.existsSync(sessionInfo.auth.existsSync(sessionInfo.authPath))Path)) {
+        if (sessionInfo.authPath && fs.existsSync(sessionInfo.authPath)) {
             fs.rmSync(sessionInfo.authPath, { recursive: true, force: true });
- {
-            fs.rmSync(sessionInfo.authPath, {            logger.info(`🗑️ Deleted session files: ${sessionInfo.authPath}`);
-        }
-        
-        activeClients.delete(sessionId);
-        logger.info(`✅ Session deleted: ${sessionId}`);
- recursive: true, force: true });
             logger.info(`🗑️ Deleted session files: ${sessionInfo.authPath}`);
         }
         
         activeClients.delete(sessionId);
         logger.info(`✅ Session deleted: ${sessionId}`);
         
-               
         res.json({ 
             success: true, 
- res.json({ 
-            success: true, 
-            message            message: `Session ${session: `Session ${sessionId} deleted successfully` 
-Id} deleted successfully` 
+            message: `Session ${sessionId} deleted successfully` 
         });
         
-        });
-        
-    } catch (    } catch (err) {
+    } catch (err) {
         logger.error(`Error deleting session ${sessionId}:`, err);
         res.status(500).json({ error: "Failed to delete session" });
     }
 });
 
-// Enhanced health check
+// Enhanced health check with queue information
 app.get("/health", (req, res) => {
     const now = new Date();
     const activeSessions = [...activeClients.values()].filter(s => s.registered && !s.isConnecting).length;
     const connectingSessions = [...activeClients.values()].filter(s => s.isConnecting).length;
     
-    res.json({
-        statuserr) {
-        logger.error(`Error deleting session ${sessionId}:`, err);
-        res.status(500).json({ error: "Failed to delete session" });
-    }
-});
-
-// Enhanced health check
-app.get("/health", (req, res) => {
-    const now = new Date();
-    const activeSessions = [...activeClients.values()].filter(s => s.registered && !s.isConnecting).length;
-    const connectingSessions = [...activeClients.values()].filter(s => s.isConnecting).length;
+    // Calculate queue statistics
+    let totalQueued = 0;
+    messageQueues.forEach(queue => {
+        totalQueued += queue.messages.length;
+    });
     
     res.json({
         status: "OK",
         timestamp: now.toISOString(),
-       : "OK",
-        timestamp uptime: process.: now.toISOString(),
         uptime: process.uptime(),
-        memory: processuptime(),
         memory: process.memoryUsage(),
-        sessions:.memoryUsage(),
         sessions: {
-            total: activeCli {
             total: activeClients.size,
-            active: activeents.size,
             active: activeSessions,
-            connectingSessions,
             connecting: connectingSessions,
-            inactive:: connectingSessions,
-            inactive: activeClients.size - activeSessions - connectingS activeClients.size - activeSessions - connectingSessions
+            inactive: activeClients.size - activeSessions - connectingSessions
         },
-       essions
-        },
-        tasks: tasks: {
+        tasks: {
             total: activeTasks.size,
-            active {
-            total: activeTasks.size,
-            active: [...activeTasks.values(): [...activeTasks.values()].filter].filter(t => t.is(t => t.isSending).length
-       Sending).length
+            active: [...activeTasks.values()].filter(t => t.isSending).length
         },
-        users: user },
+        queues: {
+            totalSessionsWithQueues: messageQueues.size,
+            totalQueuedMessages: totalQueued
+        },
         users: userSessions.size
     });
 });
 
-//Sessions.size
-    });
-});
-
-// Other Other existing endpoints (task existing endpoints-status, user-tasks, stop-task, user (task-status, user-tasks, stop-task, user-stats, etc.)
-// ... [-stats, etc.)
-// ... [Previous endpointsPrevious endpoints remain the same with enhanced logging]
-
-// remain the same with enhanced logging]
+// Other existing endpoints (user-tasks, user-stats, etc.) remain similar
 
 // Graceful shutdown
-process.on('SIGINT', Graceful shutdown
 process.on('SIGINT', () => {
-    logger.info('\n () => {
     logger.info('\n🛑 Shutting down gracefully...');
-🛑 Shutting down gracefully...');
     
-    // Stop all keep    
-    // Stop all keep-alive intervals-alive intervals
-    activeClients.forEach
-    activeClients.forEach((((sessionInfo) => {
-       sessionInfo) => {
-        stopKeepAlive(session stopKeepAlive(sessionInfo);
+    // Stop all keep-alive intervals
+    activeClients.forEach((sessionInfo) => {
+        stopKeepAlive(sessionInfo);
     });
     
-    // Close all WhatsAppInfo);
-    });
-    
-    // Close connections
-    activeClients all WhatsApp connections
+    // Close all WhatsApp connections
     activeClients.forEach(({ client }, sessionId) => {
-.forEach(({ client }, sessionId) => {
         try { 
             if (client) {
-        try { 
-            if (                client.end(); 
-                logger.infoclient) {
                 client.end(); 
                 logger.info(`🔌 Closed WhatsApp session: ${sessionId}`);
             }
         } catch (e) { 
-            logger.error(`Error closing session ${session(`🔌 Closed WhatsApp session: ${sessionId}`);
-            }
-        } catch (e) { 
-            logger.error(`Error closing session ${sessionId}:`, eId}:`, e);
-        }
-    });
-    
-    // Cleanup temp files
-   );
+            logger.error(`Error closing session ${sessionId}:`, e);
         }
     });
     
     // Cleanup temp files
     try {
-        if try {
         if (fs.existsSync('uploads')) {
-            fs.rmSync('uploads', { recursive: true, force: true });
-            logger.info('🧹 Cleaned up uploads directory');
-        }
-    } catch (e) {
-        logger.error('Error cleaning up uploads:', (fs.existsSync('uploads')) {
             fs.rmSync('uploads', { recursive: true, force: true });
             logger.info('🧹 Cleaned up uploads directory');
         }
@@ -1096,24 +1095,8 @@ process.on('SIGINT', () => {
 
 app.listen(PORT, () => {
     logger.info(`
-🚀 WHATSAPP BULK SENDER - AUTO-RECONNECT EDITION
-📍 Server running at http://localhost:${PORT}
-👥 Multi-user system with auto-reconnect
- e);
-    }
-    
-    logger.info('✅ Server shutdown complete');
-    process.exit(0);
-});
 
-app.listen(PORT, () => {
-    logger.info(`
-🚀 WHATSAPP BULK SENDER - AUTO-RECONNECT EDITION
-📍 Server running at http://localhost:${PORT}
-👥 Multi-user system with auto-reconnect
-🔗 Sessions will automatically reconnect if disconnected
-💓 Keep-alive mechanism active
-📊 Enhanced logging enabled
+📊 Enhanced logging with queue statistics
 ⚡ Ready to send bulk messages with maximum stability!
     `);
 });
