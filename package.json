@@ -1,0 +1,32 @@
+{
+  "name": "whatsapp-bulk-sender-multi-user",
+  "version": "2.0.0",
+  "description": "Multi-user WhatsApp Bulk Message Sender with VIP Interface",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "whatsapp",
+    "bulk-sender",
+    "multi-user",
+    "automation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@whiskeysockets/baileys": "^6.4.0",
+    "multer": "^1.4.5-lts.1",
+    "pino": "^8.15.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
