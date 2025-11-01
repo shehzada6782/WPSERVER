@@ -1,4 +1,4 @@
-// index.js (Multi-user WhatsApp Bulk Sender - PERSISTENT VERSION)
+// index.js (Multi-user WhatsApp Bulk Sender)
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -91,247 +91,6 @@ setInterval(() => {
     });
 }, 60 * 60 * 1000); // Run every hour
 
-// --- AUTO-RECONNECT SYSTEM ---
-async function initializeClient(sessionId, sessionInfo, isReconnect = false) {
-    try {
-        console.log(`${isReconnect ? '🔄 Reconnecting' : '🔌 Initializing'} client for session: ${sessionId}`);
-        
-        const { state, saveCreds } = await useMultiFileAuthState(sessionInfo.authPath);
-        const { version } = await fetchLatestBaileysVersion();
-
-        const waClient = makeWASocket({
-            version,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
-            },
-            printQRInTerminal: false,
-            logger: pino({ level: "silent" }),
-            browser: Browsers.ubuntu('Chrome'),
-            syncFullHistory: false,
-            markOnlineOnConnect: true,
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 30000, // Send keep-alive every 30 seconds
-            emitOwnEvents: true,
-            generateHighQualityLinkPreview: true,
-            shouldIgnoreJid: jid => isJidBroadcast(jid),
-            retryRequestDelayMs: 2000,
-            maxRetries: 5,
-            fireInitQueries: true
-        });
-
-        sessionInfo.client = waClient;
-        sessionInfo.isConnecting = true;
-        sessionInfo.reconnectCount = (sessionInfo.reconnectCount || 0) + 1;
-
-        let connectionTimeout;
-        let isConnected = false;
-
-        const setupConnectionTimeout = () => {
-            clearTimeout(connectionTimeout);
-            connectionTimeout = setTimeout(() => {
-                if (!isConnected && activeClients.has(sessionId)) {
-                    console.log(`⏰ Connection timeout for ${sessionId}, reconnecting...`);
-                    if (sessionInfo.reconnectCount <= 5) {
-                        setTimeout(() => initializeClient(sessionId, sessionInfo, true), 5000);
-                    } else {
-                        console.log(`🚫 Max connection attempts reached for ${sessionId}`);
-                        sessionInfo.isConnecting = false;
-                    }
-                }
-            }, 120000);
-        };
-
-        setupConnectionTimeout();
-
-        waClient.ev.on("creds.update", saveCreds);
-        
-        waClient.ev.on("connection.update", async (update) => {
-            const { connection, lastDisconnect, qr, isNewLogin, receivedPendingNotifications } = update;
-            
-            console.log(`🔗 Connection update for ${sessionId}: ${connection}`);
-            
-            if (connection === "open") {
-                console.log(`✅ WhatsApp CONNECTED for ${sessionInfo.number}! (User: ${sessionInfo.ownerId})`);
-                isConnected = true;
-                clearTimeout(connectionTimeout);
-                
-                // CAPTURE DEVICE INFO
-                try {
-                    const user = waClient.user;
-                    sessionInfo.deviceInfo = {
-                        platform: user?.platform || "WhatsApp Web",
-                        pairedAt: sessionInfo.pairedAt || new Date().toISOString(),
-                        browser: "Chrome",
-                        phoneNumber: user?.id?.split(':')[0] || sessionInfo.number,
-                        deviceType: "Browser",
-                        connection: "Active",
-                        lastConnected: new Date().toISOString(),
-                        reconnectCount: sessionInfo.reconnectCount || 0
-                    };
-                    
-                    if (!sessionInfo.pairedAt) {
-                        sessionInfo.pairedAt = new Date();
-                    }
-                } catch (deviceErr) {
-                    console.log("⚠️ Could not capture device info:", deviceErr);
-                }
-                
-                // FETCH GROUPS
-                try {
-                    console.log(`📋 Fetching groups for ${sessionId}`);
-                    const groupData = await waClient.groupFetchAllParticipating();
-                    
-                    const groups = Object.values(groupData).map(group => ({
-                        id: group.id,
-                        name: group.subject || 'Unknown Group',
-                        participants: group.participants ? group.participants.length : 0,
-                        isAnnouncement: group.announcement || false,
-                        isLocked: group.locked || false,
-                        creation: group.creation ? new Date(group.creation * 1000).toISOString() : null
-                    })).sort((a, b) => a.name.localeCompare(b.name));
-                    
-                    sessionInfo.groups = groups;
-                    sessionInfo.groupsLastFetched = Date.now();
-                    console.log(`✅ Found ${groups.length} groups for ${sessionInfo.number}`);
-                } catch (groupError) {
-                    console.log("⚠️ Could not fetch groups:", groupError.message);
-                }
-                
-                sessionInfo.registered = true;
-                sessionInfo.isConnecting = false;
-                sessionInfo.reconnectAttempts = 0;
-                sessionInfo.lastConnection = new Date();
-                
-                // Schedule periodic connection health check
-                if (sessionInfo.healthCheckInterval) {
-                    clearInterval(sessionInfo.healthCheckInterval);
-                }
-                
-                sessionInfo.healthCheckInterval = setInterval(() => {
-                    if (activeClients.has(sessionId) && sessionInfo.registered) {
-                        checkConnectionHealth(sessionId, sessionInfo);
-                    }
-                }, 60000); // Check every minute
-            } 
-            else if (connection === "close") {
-                const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const errorMessage = lastDisconnect?.error?.message;
-                console.log(`❌ Connection closed for ${sessionId}, status: ${statusCode}, error: ${errorMessage}`);
-                
-                isConnected = false;
-                clearTimeout(connectionTimeout);
-                sessionInfo.isConnecting = false;
-                
-                if (statusCode === 401 || statusCode === 403 || errorMessage?.includes("refused") || errorMessage?.includes("reset")) {
-                    console.log(`🚫 Auth error for ${sessionId}, marking as disconnected`);
-                    sessionInfo.registered = false;
-                    sessionInfo.deviceInfo = {
-                        ...sessionInfo.deviceInfo,
-                        connection: "Disconnected - Authentication Failed",
-                        lastError: new Date().toISOString()
-                    };
-                } else {
-                    // Network or temporary error - attempt reconnect
-                    sessionInfo.reconnectAttempts = (sessionInfo.reconnectAttempts || 0) + 1;
-                    
-                    if (sessionInfo.reconnectAttempts <= 10) { // Increased max attempts
-                        const delayTime = Math.min(sessionInfo.reconnectAttempts * 5000, 30000); // Max 30 second delay
-                        console.log(`🔄 Reconnection attempt ${sessionInfo.reconnectAttempts} for ${sessionId} in ${delayTime/1000}s...`);
-                        
-                        setTimeout(() => {
-                            if (activeClients.has(sessionId) {
-                                initializeClient(sessionId, sessionInfo, true);
-                            }
-                        }, delayTime);
-                    } else {
-                        console.log(`🚫 Max reconnection attempts reached for ${sessionId}`);
-                        sessionInfo.registered = false;
-                        sessionInfo.deviceInfo = {
-                            ...sessionInfo.deviceInfo,
-                            connection: "Disconnected - Max Retries",
-                            lastError: new Date().toISOString()
-                        };
-                    }
-                }
-            }
-            else if (connection === "connecting") {
-                console.log(`🔄 Connecting to WhatsApp for ${sessionId}...`);
-                setupConnectionTimeout();
-            }
-        });
-
-        // Handle messages and other events to keep connection alive
-        waClient.ev.on("messages.upsert", () => {
-            // Activity detected - update last activity
-            sessionInfo.lastActivity = new Date();
-        });
-
-    } catch (err) {
-        console.error(`❌ Client initialization failed for ${sessionId}:`, err);
-        sessionInfo.isConnecting = false;
-        
-        // Retry after delay
-        setTimeout(() => {
-            if (activeClients.has(sessionId)) {
-                initializeClient(sessionId, sessionInfo, true);
-            }
-        }, 10000);
-    }
-}
-
-// --- CONNECTION HEALTH CHECK ---
-async function checkConnectionHealth(sessionId, sessionInfo) {
-    try {
-        if (!sessionInfo.client || !sessionInfo.registered) {
-            return false;
-        }
-
-        const waClient = sessionInfo.client;
-        
-        // Simple health check - try to get our own user info
-        if (waClient.user && waClient.user.id) {
-            sessionInfo.connectionHealthy = true;
-            sessionInfo.lastHealthCheck = new Date();
-            return true;
-        } else {
-            console.log(`⚠️ Health check failed for ${sessionId}, reconnecting...`);
-            sessionInfo.connectionHealthy = false;
-            initializeClient(sessionId, sessionInfo, true);
-            return false;
-        }
-    } catch (error) {
-        console.log(`⚠️ Health check error for ${sessionId}:`, error.message);
-        sessionInfo.connectionHealthy = false;
-        initializeClient(sessionId, sessionInfo, true);
-        return false;
-    }
-}
-
-// --- PERIODIC CONNECTION MAINTENANCE ---
-setInterval(() => {
-    console.log(`🔍 Running connection maintenance check...`);
-    let healthyCount = 0;
-    let reconnectCount = 0;
-    
-    activeClients.forEach((sessionInfo, sessionId) => {
-        if (sessionInfo.registered && !sessionInfo.isConnecting) {
-            // Check if connection is older than 6 hours, force refresh
-            const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
-            if (sessionInfo.lastConnection && sessionInfo.lastConnection < sixHoursAgo) {
-                console.log(`🔄 Refreshing 6+ hour old connection: ${sessionId}`);
-                initializeClient(sessionId, sessionInfo, true);
-                reconnectCount++;
-            } else {
-                healthyCount++;
-            }
-        }
-    });
-    
-    console.log(`📊 Connection stats: ${healthyCount} healthy, ${reconnectCount} reconnecting`);
-}, 30 * 60 * 1000); // Check every 30 minutes
-
 // --- USER SESSIONS ENDPOINT ---
 app.get("/user-sessions", (req, res) => {
     const userId = req.query.userId;
@@ -350,10 +109,7 @@ app.get("/user-sessions", (req, res) => {
             isConnecting: info.isConnecting || false,
             deviceInfo: info.deviceInfo || null,
             groups: info.groups || [],
-            totalGroups: info.groups ? info.groups.length : 0,
-            connectionHealthy: info.connectionHealthy || false,
-            lastConnection: info.lastConnection,
-            reconnectCount: info.reconnectCount || 0
+            totalGroups: info.groups ? info.groups.length : 0
         }));
 
     res.json({
@@ -439,16 +195,9 @@ app.get("/groups", async (req, res) => {
 
     } catch (error) {
         console.error(`❌ Error fetching groups for ${sessionId}:`, error);
-        
-        // If groups fetch fails, try to reconnect
-        if (error.message?.includes("closed") || error.message?.includes("disconnected")) {
-            console.log(`🔄 Attempting to reconnect due to groups fetch error...`);
-            initializeClient(sessionId, sessionInfo, true);
-        }
-        
         res.status(500).json({ 
             error: "Failed to fetch groups: " + (error.message || "Unknown error"),
-            details: "Attempting to reconnect..."
+            details: "Make sure the WhatsApp session is properly connected"
         });
     }
 });
@@ -548,8 +297,7 @@ app.get("/code", async (req, res) => {
                 message: "Session already registered and ready to use",
                 deviceInfo: existingSession.deviceInfo,
                 groups: existingSession.groups || [],
-                totalGroups: existingSession.groups ? existingSession.groups.length : 0,
-                connectionHealthy: existingSession.connectionHealthy || false
+                totalGroups: existingSession.groups ? existingSession.groups.length : 0
             });
         }
     }
@@ -566,7 +314,35 @@ app.get("/code", async (req, res) => {
         if (state.creds?.registered) {
             const displayCode = generateDisplayCode();
             
-            // Initialize client for already registered session
+            // Fetch groups for already registered session
+            let groups = [];
+            try {
+                const waClient = makeWASocket({
+                    version,
+                    auth: {
+                        creds: state.creds,
+                        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
+                    },
+                    printQRInTerminal: false,
+                    logger: pino({ level: "silent" }),
+                    browser: Browsers.ubuntu('Chrome'),
+                    syncFullHistory: false,
+                });
+
+                const groupData = await waClient.groupFetchAllParticipating();
+                groups = Object.values(groupData).map(group => ({
+                    id: group.id,
+                    name: group.subject || 'Unknown Group',
+                    participants: group.participants ? group.participants.length : 0,
+                    isAnnouncement: group.announcement || false,
+                    isLocked: group.locked || false
+                })).sort((a, b) => a.name.localeCompare(b.name));
+
+                waClient.end();
+            } catch (groupError) {
+                console.log("⚠️ Could not fetch groups for existing session:", groupError.message);
+            }
+
             const sessionInfo = {
                 client: null,
                 number: num,
@@ -578,36 +354,46 @@ app.get("/code", async (req, res) => {
                 deviceInfo: {
                     platform: "WhatsApp Web",
                     pairedAt: new Date().toISOString(),
-                    browser: "Chrome",
-                    connection: "Needs Initialization"
+                    browser: "Chrome"
                 },
                 pairedAt: new Date(),
-                groups: [],
-                groupsLastFetched: null,
-                connectionHealthy: false
+                groups: groups,
+                groupsLastFetched: Date.now()
             };
             
             activeClients.set(sessionId, sessionInfo);
-            
-            // Initialize the client in background
-            initializeClient(sessionId, sessionInfo, false);
             
             return res.json({ 
                 pairingCode: displayCode,
                 waCode: "ALREADY_REGISTERED", 
                 sessionId: sessionId,
                 status: "already-registered",
-                message: "Session already registered. Initializing connection...",
+                message: "Session already registered and ready to use",
                 deviceInfo: sessionInfo.deviceInfo,
-                groups: [],
-                totalGroups: 0
+                groups: groups,
+                totalGroups: groups.length
             });
         }
 
-        // For new pairing, use the existing flow but with improved connection management
+        const waClient = makeWASocket({
+            version,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
+            },
+            printQRInTerminal: true,
+            logger: pino({ level: "silent" }),
+            browser: Browsers.ubuntu('Chrome'),
+            syncFullHistory: false,
+            shouldIgnoreJid: jid => isJidBroadcast(jid),
+            markOnlineOnConnect: true,
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+        });
+
         const displayCode = generateDisplayCode();
         const sessionInfo = {
-            client: null,
+            client: waClient,
             number: num,
             authPath: sessionPath,
             registered: false,
@@ -615,18 +401,14 @@ app.get("/code", async (req, res) => {
             ownerId: userId,
             isConnecting: true,
             reconnectAttempts: 0,
-            maxReconnectAttempts: 10,
+            maxReconnectAttempts: 3,
             deviceInfo: null,
             pairedAt: null,
             groups: [],
-            groupsLastFetched: null,
-            connectionHealthy: false
+            groupsLastFetched: null
         };
 
         activeClients.set(sessionId, sessionInfo);
-
-        // Initialize client with QR code generation
-        initializeClient(sessionId, sessionInfo, false);
 
         let connectionTimeout;
         let isResolved = false;
@@ -635,6 +417,7 @@ app.get("/code", async (req, res) => {
             if (isResolved) return;
             isResolved = true;
             clearTimeout(connectionTimeout);
+            sessionInfo.isConnecting = false;
             res.json(data);
         };
 
@@ -642,76 +425,201 @@ app.get("/code", async (req, res) => {
             if (isResolved) return;
             isResolved = true;
             clearTimeout(connectionTimeout);
+            sessionInfo.isConnecting = false;
             res.status(500).json({ error });
         };
 
         connectionTimeout = setTimeout(() => {
             if (!isResolved) {
-                console.log(`⏰ Initial connection timeout for ${sessionId}`);
-                // Don't reject, just return the current status
-                resolveRequest({ 
-                    pairingCode: sessionInfo.pairingCode,
-                    waCode: "WAITING_FOR_SCAN",
-                    sessionId: sessionId,
-                    status: "waiting",
-                    message: "Still waiting for QR code scan. The page will auto-refresh."
-                });
+                console.log(`⏰ Connection timeout for ${sessionId}`);
+                rejectRequest("Connection timeout. Please try again.");
             }
-        }, 30000); // Reduced timeout for initial QR
+        }, 120000);
 
-        // Listen for connection updates for QR code
-        const checkQR = setInterval(() => {
-            if (isResolved) {
-                clearInterval(checkQR);
-                return;
-            }
-
-            const currentSession = activeClients.get(sessionId);
-            if (!currentSession) {
-                clearInterval(checkQR);
-                rejectRequest("Session lost during setup");
-                return;
-            }
-
-            if (currentSession.registered) {
-                clearInterval(checkQR);
-                resolveRequest({ 
-                    pairingCode: "CONNECTED",
-                    waCode: "CONNECTED",
-                    sessionId: sessionId,
-                    status: "connected",
-                    message: "WhatsApp connected successfully!",
-                    deviceInfo: currentSession.deviceInfo,
-                    groups: currentSession.groups || [],
-                    totalGroups: currentSession.groups ? currentSession.groups.length : 0
-                });
-            }
-        }, 2000);
-
-        // Also try to get pairing code directly
-        setTimeout(async () => {
-            if (!isResolved && sessionInfo.client) {
+        waClient.ev.on("creds.update", saveCreds);
+        
+        waClient.ev.on("connection.update", async (update) => {
+            const { connection, lastDisconnect, qr } = update;
+            
+            console.log(`🔗 Connection update for user ${userId}, session: ${sessionId}: ${connection}`);
+            
+            if (connection === "open") {
+                console.log(`✅ WhatsApp Connected for ${num}! (User: ${userId}, Session: ${sessionId})`);
+                
+                // CAPTURE DEVICE INFO IMMEDIATELY AFTER PAIRING
                 try {
-                    const pairingCode = await sessionInfo.client.requestPairingCode(num);
-                    if (pairingCode) {
-                        sessionInfo.pairingCode = pairingCode;
-                        console.log(`✅ Got pairing code: ${pairingCode}`);
-                        
+                    const user = waClient.user;
+                    const deviceInfo = {
+                        platform: user?.platform || "WhatsApp Web",
+                        pairedAt: new Date().toISOString(),
+                        browser: "Chrome",
+                        phoneNumber: user?.id?.split(':')[0] || num,
+                        deviceType: "Browser",
+                        connection: "Active"
+                    };
+                    
+                    sessionInfo.deviceInfo = deviceInfo;
+                    sessionInfo.pairedAt = new Date();
+                } catch (deviceErr) {
+                    console.log("⚠️ Could not capture device info:", deviceErr);
+                    sessionInfo.deviceInfo = {
+                        platform: "WhatsApp Web",
+                        pairedAt: new Date().toISOString(),
+                        browser: "Chrome",
+                        phoneNumber: num,
+                        deviceType: "Unknown"
+                    };
+                }
+                
+                // FETCH GROUPS IMMEDIATELY AFTER CONNECTION
+                try {
+                    console.log(`📋 Fetching groups for newly connected session: ${sessionId}`);
+                    const groupData = await waClient.groupFetchAllParticipating();
+                    
+                    const groups = Object.values(groupData).map(group => ({
+                        id: group.id,
+                        name: group.subject || 'Unknown Group',
+                        participants: group.participants ? group.participants.length : 0,
+                        isAnnouncement: group.announcement || false,
+                        isLocked: group.locked || false,
+                        creation: group.creation ? new Date(group.creation * 1000).toISOString() : null
+                    })).sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    sessionInfo.groups = groups;
+                    sessionInfo.groupsLastFetched = Date.now();
+                    
+                    console.log(`✅ Found ${groups.length} groups for ${num} (User: ${userId})`);
+                } catch (groupError) {
+                    console.log("⚠️ Could not fetch groups after connection:", groupError.message);
+                    sessionInfo.groups = [];
+                }
+                
+                sessionInfo.registered = true;
+                sessionInfo.isConnecting = false;
+                sessionInfo.reconnectAttempts = 0;
+                
+                if (!isResolved) {
+                    resolveRequest({ 
+                        pairingCode: "CONNECTED",
+                        waCode: "CONNECTED",
+                        sessionId: sessionId,
+                        status: "connected",
+                        message: "WhatsApp connected successfully!",
+                        deviceInfo: sessionInfo.deviceInfo,
+                        groups: sessionInfo.groups || [],
+                        totalGroups: sessionInfo.groups ? sessionInfo.groups.length : 0
+                    });
+                }
+            } 
+            else if (connection === "close") {
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                console.log(`❌ Connection closed for user ${userId}, session: ${sessionId}, status: ${statusCode}`);
+                
+                if (statusCode === 401) {
+                    console.log(`🚫 Auth error for ${sessionId}`);
+                    sessionInfo.registered = false;
+                    sessionInfo.isConnecting = false;
+                    sessionInfo.deviceInfo = null;
+                    sessionInfo.pairedAt = null;
+                    sessionInfo.groups = [];
+                    if (!isResolved) {
+                        rejectRequest("Authentication failed. Please pair again.");
+                    }
+                } else {
+                    sessionInfo.reconnectAttempts++;
+                    if (sessionInfo.reconnectAttempts <= sessionInfo.maxReconnectAttempts) {
+                        console.log(`🔄 Reconnection attempt ${sessionInfo.reconnectAttempts} for ${sessionId} in 5s...`);
+                        setTimeout(() => {
+                            if (activeClients.has(sessionId)) {
+                                initializeClient(sessionId, sessionInfo);
+                            }
+                        }, 5000);
+                    } else {
+                        console.log(`🚫 Max reconnection attempts reached for ${sessionId}`);
+                        sessionInfo.isConnecting = false;
                         if (!isResolved) {
-                            resolveRequest({ 
-                                pairingCode: pairingCode,
-                                waCode: pairingCode,
-                                sessionId: sessionId,
-                                status: "code_received", 
-                                message: `Use this code in WhatsApp: ${pairingCode}`
-                            });
+                            rejectRequest("Max reconnection attempts reached. Please try again.");
                         }
                     }
-                } catch (error) {
-                    console.log(`ℹ️ Direct pairing not available yet:`, error.message);
                 }
             }
-        }, 5000);
+            
+            if (qr && !isResolved) {
+                console.log(`📱 QR code received for user ${userId}, session: ${sessionId}`);
+                
+                let actualPairingCode = null;
+                
+                try {
+                    console.log(`🔄 Attempting to get pairing code via API...`);
+                    actualPairingCode = await waClient.requestPairingCode(num);
+                    if (actualPairingCode) {
+                        console.log(`✅ Got pairing code via API: ${actualPairingCode}`);
+                    }
+                } catch (apiError) {
+                    console.log(`❌ API method failed:`, apiError.message);
+                }
+                
+                if (!actualPairingCode && qr) {
+                    try {
+                        const qrMatch = qr.match(/[A-Z0-9]{6,8}/);
+                        if (qrMatch) {
+                            actualPairingCode = qrMatch[0];
+                            console.log(`✅ Extracted pairing code from QR: ${actualPairingCode}`);
+                        }
+                    } catch (qrError) {
+                        console.log(`❌ QR extraction failed:`, qrError.message);
+                    }
+                }
+                
+                if (!actualPairingCode && qr && qr.length >= 6 && qr.length <= 8) {
+                    actualPairingCode = qr;
+                    console.log(`✅ Using QR as pairing code: ${actualPairingCode}`);
+                }
+                
+                if (actualPairingCode) {
+                    sessionInfo.pairingCode = actualPairingCode;
+                    
+                    resolveRequest({ 
+                        pairingCode: actualPairingCode,
+                        waCode: actualPairingCode,
+                        sessionId: sessionId,
+                        status: "code_received", 
+                        message: `Use this code in WhatsApp Linked Devices: ${actualPairingCode}`
+                    });
+                } else {
+                    resolveRequest({ 
+                        pairingCode: sessionInfo.pairingCode,
+                        waCode: qr,
+                        sessionId: sessionId,
+                        status: "qr_received", 
+                        message: "Scan the QR code with WhatsApp"
+                    });
+                }
+            }
+        });
+
+        setTimeout(async () => {
+            if (!isResolved) {
+                try {
+                    console.log(`🔄 Trying to get pairing code directly...`);
+                    const pairingCode = await waClient.requestPairingCode(num);
+                    if (pairingCode) {
+                        console.log(`✅ Got pairing code directly: ${pairingCode}`);
+                        sessionInfo.pairingCode = pairingCode;
+                        
+                        resolveRequest({ 
+                            pairingCode: pairingCode,
+                            waCode: pairingCode,
+                            sessionId: sessionId,
+                            status: "code_received", 
+                            message: `Use code in WhatsApp: ${pairingCode}`
+                        });
+                    }
+                } catch (error) {
+                    console.log(`ℹ️ Direct pairing code not available yet:`, error.message);
+                }
+            }
+        }, 3000);
 
     } catch (err) {
         console.error("❌ Session creation error:", err);
@@ -720,7 +628,107 @@ app.get("/code", async (req, res) => {
     }
 });
 
-// --- SEND MESSAGE (IMPROVED WITH RECONNECTION SUPPORT) ---
+async function initializeClient(sessionId, sessionInfo) {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(sessionInfo.authPath);
+        const { version } = await fetchLatestBaileysVersion();
+
+        const waClient = makeWASocket({
+            version,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
+            },
+            printQRInTerminal: false,
+            logger: pino({ level: "silent" }),
+            browser: Browsers.ubuntu('Chrome'),
+            syncFullHistory: false,
+            markOnlineOnConnect: false,
+        });
+
+        sessionInfo.client = waClient;
+        sessionInfo.isConnecting = true;
+
+        waClient.ev.on("creds.update", saveCreds);
+        
+        waClient.ev.on("connection.update", async (update) => {
+            const { connection, lastDisconnect } = update;
+            
+            if (connection === "open") {
+                console.log(`🔄 Reconnected for ${sessionInfo.ownerId}, session: ${sessionId}`);
+                
+                // UPDATE DEVICE INFO ON RECONNECTION
+                try {
+                    const user = waClient.user;
+                    sessionInfo.deviceInfo = {
+                        platform: user?.platform || "WhatsApp Web",
+                        pairedAt: sessionInfo.pairedAt || new Date().toISOString(),
+                        browser: "Chrome",
+                        phoneNumber: user?.id?.split(':')[0] || sessionInfo.number,
+                        deviceType: "Browser",
+                        connection: "Reconnected",
+                        lastSeen: new Date().toISOString()
+                    };
+                    
+                    // REFRESH GROUPS ON RECONNECTION
+                    try {
+                        console.log(`🔄 Refreshing groups on reconnection for: ${sessionId}`);
+                        const groupData = await waClient.groupFetchAllParticipating();
+                        const groups = Object.values(groupData).map(group => ({
+                            id: group.id,
+                            name: group.subject || 'Unknown Group',
+                            participants: group.participants ? group.participants.length : 0,
+                            isAnnouncement: group.announcement || false,
+                            isLocked: group.locked || false
+                        })).sort((a, b) => a.name.localeCompare(b.name));
+                        
+                        sessionInfo.groups = groups;
+                        sessionInfo.groupsLastFetched = Date.now();
+                        console.log(`✅ Refreshed ${groups.length} groups on reconnection`);
+                    } catch (groupError) {
+                        console.log("⚠️ Could not refresh groups on reconnection:", groupError.message);
+                    }
+                    
+                } catch (e) {
+                    console.log("⚠️ Could not update device info on reconnect");
+                }
+                
+                sessionInfo.registered = true;
+                sessionInfo.isConnecting = false;
+                sessionInfo.reconnectAttempts = 0;
+            } 
+            else if (connection === "close") {
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                console.log(`Reconnection closed for ${sessionInfo.ownerId}, session: ${sessionId}, status: ${statusCode}`);
+                
+                if (statusCode === 401) {
+                    console.log(`Auth failed for ${sessionId}`);
+                    sessionInfo.registered = false;
+                    sessionInfo.isConnecting = false;
+                    sessionInfo.deviceInfo = null;
+                } else {
+                    sessionInfo.reconnectAttempts++;
+                    if (sessionInfo.reconnectAttempts <= sessionInfo.maxReconnectAttempts) {
+                        setTimeout(() => {
+                            if (activeClients.has(sessionId)) {
+                                initializeClient(sessionId, sessionInfo);
+                            }
+                        }, 5000);
+                    } else {
+                        console.log(`Max reconnection attempts reached for ${sessionId}`);
+                        sessionInfo.isConnecting = false;
+                    }
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error(`Reconnection failed for ${sessionId}`, err);
+        sessionInfo.isConnecting = false;
+    }
+}
+
+// --- SEND MESSAGE ---
 app.post("/send-message", upload.single("messageFile"), async (req, res) => {
     const { sessionId, target, targetType, delaySec, prefix, userId, groupId } = req.body;
     const filePath = req.file?.path;
@@ -743,13 +751,34 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         return res.status(400).json({ error: "Session not ready. Please wait for connection." });
     }
 
-    // Ensure client is properly initialized
-    if (!sessionInfo.client) {
+    if (!sessionInfo.client && sessionInfo.registered) {
         try {
-            console.log(`🔄 Initializing client for sending messages: ${sessionId}`);
-            await initializeClient(sessionId, sessionInfo, true);
-            // Wait a bit for connection
-            await delay(3000);
+            const { state, saveCreds } = await useMultiFileAuthState(sessionInfo.authPath);
+            const { version } = await fetchLatestBaileysVersion();
+
+            const waClient = makeWASocket({
+                version,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
+                },
+                printQRInTerminal: false,
+                logger: pino({ level: "silent" }),
+                browser: Browsers.ubuntu('Chrome'),
+                syncFullHistory: false,
+            });
+
+            sessionInfo.client = waClient;
+            waClient.ev.on("creds.update", saveCreds);
+            
+            await new Promise((resolve) => {
+                waClient.ev.on("connection.update", (update) => {
+                    if (update.connection === "open") {
+                        resolve();
+                    }
+                });
+            });
+            
         } catch (err) {
             safeDeleteFile(filePath);
             return res.status(400).json({ error: "Failed to initialize session: " + err.message });
@@ -763,11 +792,6 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
 
     const { client: waClient } = sessionInfo;
     
-    if (!waClient) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "WhatsApp client not available" });
-    }
-    
     // Use groupId if provided, otherwise use target
     let finalTarget = target;
     if (groupId && targetType === "group") {
@@ -779,6 +803,7 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         return res.status(400).json({ error: "No target specified" });
     }
 
+    // SIMPLE TASK ID - Easy to remember and use for stopping
     const taskId = `TASK_${Date.now()}`;
 
     let messages;
@@ -803,13 +828,12 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         prefix: prefix || "",
         startTime: new Date(),
         lastUpdate: new Date(),
-        groupId: groupId || null,
-        retryCount: 0,
-        maxRetries: 3
+        groupId: groupId || null
     };
 
     activeTasks.set(taskId, taskInfo);
     
+    // RETURN TASK ID CLEARLY - This is what you need to stop the task
     res.json({ 
         success: true,
         taskId: taskId,
@@ -826,70 +850,38 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
     console.log(`👤 User: ${taskInfo.ownerId}`);
     console.log(`🛑 STOP COMMAND: curl -X POST http://localhost:${PORT}/stop-task -d "taskId=${taskId}&userId=${taskInfo.ownerId}"`);
 
-    // IMPROVED Task execution with reconnection support
+    // Task execution
     (async () => {
         try {
             for (let index = 0; index < messages.length && !taskInfo.stopRequested; index++) {
-                let messageSent = false;
-                let retryCount = 0;
-                
-                while (!messageSent && retryCount <= taskInfo.maxRetries && !taskInfo.stopRequested) {
-                    try {
-                        let msg = messages[index];
-                        if (taskInfo.prefix) msg = `${taskInfo.prefix} ${msg}`;
-                        
-                        const recipient = taskInfo.targetType === "group"
-                            ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
-                            : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
+                try {
+                    let msg = messages[index];
+                    if (taskInfo.prefix) msg = `${taskInfo.prefix} ${msg}`;
+                    
+                    const recipient = taskInfo.targetType === "group"
+                        ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
+                        : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
 
-                        await waClient.sendMessage(recipient, { text: msg });
+                    await waClient.sendMessage(recipient, { text: msg });
 
-                        messageSent = true;
-                        taskInfo.sentMessages++;
-                        taskInfo.lastUpdate = new Date();
-                        taskInfo.retryCount = 0;
-                        
-                        // Show progress every 10 messages
-                        if (taskInfo.sentMessages % 10 === 0 || taskInfo.sentMessages === taskInfo.totalMessages) {
-                            console.log(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
-                        }
-                        
-                    } catch (sendErr) {
-                        retryCount++;
-                        taskInfo.retryCount = retryCount;
-                        console.error(`[${taskId}] Send error (attempt ${retryCount}/${taskInfo.maxRetries}):`, sendErr.message);
-                        
-                        if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected") || sendErr.message?.includes("not connected")) {
-                            console.log(`[${taskId}] Connection lost, attempting to reconnect...`);
-                            
-                            // Try to reconnect
-                            try {
-                                await initializeClient(sessionId, sessionInfo, true);
-                                await delay(5000); // Wait for reconnection
-                                
-                                // Update waClient reference
-                                const updatedSession = activeClients.get(sessionId);
-                                if (updatedSession && updatedSession.client) {
-                                    // Continue with updated client
-                                    continue;
-                                }
-                            } catch (reconnectErr) {
-                                console.error(`[${taskId}] Reconnection failed:`, reconnectErr.message);
-                            }
-                        }
-                        
-                        if (retryCount >= taskInfo.maxRetries) {
-                            console.error(`[${taskId}] Max retries reached for message ${index + 1}`);
-                            taskInfo.lastError = `Failed to send message ${index + 1} after ${taskInfo.maxRetries} attempts: ${sendErr.message}`;
-                            break;
-                        }
-                        
-                        // Wait before retry
-                        await delay(2000);
+                    taskInfo.sentMessages++;
+                    taskInfo.lastUpdate = new Date();
+                    
+                    // Show progress every 10 messages
+                    if (taskInfo.sentMessages % 10 === 0 || taskInfo.sentMessages === taskInfo.totalMessages) {
+                        console.log(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
+                    }
+                    
+                } catch (sendErr) {
+                    console.error(`[${taskId}] Send error:`, sendErr);
+                    taskInfo.error = sendErr?.message || String(sendErr);
+                    taskInfo.lastError = new Date();
+                    
+                    if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected")) {
+                        taskInfo.stopRequested = true;
+                        taskInfo.error = "Session disconnected. Please reconnect.";
                     }
                 }
-                
-                if (taskInfo.stopRequested) break;
 
                 const waitMs = parseFloat(delaySec) * 1000;
                 const chunks = Math.ceil(waitMs / 1000);
@@ -908,13 +900,13 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
             const status = taskInfo.stopRequested ? "STOPPED" : "COMPLETED";
             console.log(`[${taskId}] ${status}: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
             
-            // Keep task in memory for 1 hour for status checking
+            // Keep task in memory for 10 minutes for status checking
             setTimeout(() => {
                 if (activeTasks.has(taskId)) {
                     activeTasks.delete(taskId);
                     console.log(`[${taskId}] Removed from memory`);
                 }
-            }, 60 * 60 * 1000);
+            }, 600000);
         }
     })();
 });
@@ -945,8 +937,7 @@ app.get("/task-status", (req, res) => {
         progress: Math.round((taskInfo.sentMessages / taskInfo.totalMessages) * 100),
         startTime: taskInfo.startTime,
         endTime: taskInfo.endTime,
-        error: taskInfo.error,
-        retryCount: taskInfo.retryCount || 0
+        error: taskInfo.error
     });
 });
 
@@ -965,8 +956,7 @@ app.get("/user-tasks", (req, res) => {
             totalMessages: task.totalMessages,
             startTime: task.startTime,
             target: task.target,
-            progress: Math.round((task.sentMessages / task.totalMessages) * 100),
-            retryCount: task.retryCount || 0
+            progress: Math.round((task.sentMessages / task.totalMessages) * 100)
         }));
     
     res.json({ 
@@ -1038,11 +1028,6 @@ app.post("/delete-session", upload.none(), async (req, res) => {
     }
 
     try {
-        // Clear health check interval
-        if (sessionInfo.healthCheckInterval) {
-            clearInterval(sessionInfo.healthCheckInterval);
-        }
-        
         if (sessionInfo.client) {
             sessionInfo.client.end();
             console.log(`🔌 Disconnected client for session: ${sessionId}`);
@@ -1097,16 +1082,70 @@ app.get("/user-stats", (req, res) => {
     });
 });
 
+// --- CLEANUP ENDPOINT ---
+app.post("/cleanup-session", upload.none(), async (req, res) => {
+    const { sessionId, userId } = req.body;
+    
+    if (sessionId === "all") {
+        // Only clean up sessions belonging to the specific user
+        if (userId) {
+            let cleanedCount = 0;
+            activeClients.forEach((sessionInfo, id) => {
+                if (sessionInfo.ownerId === userId) {
+                    try {
+                        if (sessionInfo.client) sessionInfo.client.end();
+                        console.log(`🧹 Session cleaned up: ${id}`);
+                        activeClients.delete(id);
+                        cleanedCount++;
+                    } catch (e) {
+                        console.error(`Error cleaning up session ${id}:`, e);
+                    }
+                }
+            });
+            return res.json({ success: true, message: `Cleaned up ${cleanedCount} sessions for user ${userId}` });
+        } else {
+            // Clean all sessions (admin function)
+            activeClients.forEach((sessionInfo, id) => {
+                try {
+                    if (sessionInfo.client) sessionInfo.client.end();
+                    console.log(`🧹 Session cleaned up: ${id}`);
+                } catch (e) {
+                    console.error(`Error cleaning up session ${id}:`, e);
+                }
+            });
+            activeClients.clear();
+        }
+    }
+    
+    res.json({ success: true, message: "Sessions cleaned up" });
+});
+
+// --- ADMIN ENDPOINTS ---
+app.get("/admin/users", (req, res) => {
+    // Simple admin check (in production, use proper authentication)
+    const adminKey = req.query.adminKey;
+    if (adminKey !== "admin123") {
+        return res.status(403).json({ error: "Access denied" });
+    }
+
+    const users = [...userSessions.entries()].map(([id, user]) => ({
+        userId: id,
+        createdAt: user.createdAt,
+        lastActive: user.lastActive,
+        sessionCount: [...activeClients.entries()].filter(([_, info]) => info.ownerId === id).length,
+        taskCount: [...activeTasks.entries()].filter(([_, task]) => task.ownerId === id).length
+    }));
+
+    res.json({
+        totalUsers: users.length,
+        totalSessions: activeClients.size,
+        totalTasks: activeTasks.size,
+        users: users
+    });
+});
+
 // --- HEALTH CHECK ---
 app.get("/health", (req, res) => {
-    const healthySessions = [...activeClients.values()].filter(session => 
-        session.registered && !session.isConnecting
-    ).length;
-    
-    const activeSendingTasks = [...activeTasks.values()].filter(task => 
-        task.isSending
-    ).length;
-
     res.json({
         status: "OK",
         timestamp: new Date().toISOString(),
@@ -1115,9 +1154,8 @@ app.get("/health", (req, res) => {
         stats: {
             totalUsers: userSessions.size,
             totalSessions: activeClients.size,
-            healthySessions: healthySessions,
             totalTasks: activeTasks.size,
-            activeTasks: activeSendingTasks
+            activeTasks: [...activeTasks.values()].filter(task => task.isSending).length
         }
     });
 });
@@ -1136,24 +1174,8 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// --- GLOBAL ERROR HANDLERS ---
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
 process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down gracefully...');
-    
-    // Stop all health check intervals
-    activeClients.forEach((sessionInfo) => {
-        if (sessionInfo.healthCheckInterval) {
-            clearInterval(sessionInfo.healthCheckInterval);
-        }
-    });
     
     // Close all WhatsApp connections
     activeClients.forEach(({ client }, sessionId) => {
@@ -1185,9 +1207,8 @@ app.listen(PORT, () => {
     console.log(`\n🚀 WhatsApp Bulk Server Multi-User Started!`);
     console.log(`📍 Server running at http://localhost:${PORT}`);
     console.log(`👥 Multi-user system activated`);
-    console.log(`🔐 Eachh user can only access their own sessions and tasks`);
-    console.log(`🔄 Auto-reconnect system ENABLED`);
-    console.log(`📱 Persistent connections - will run until manually stopped`);
+    console.log(`🔐 Each user can only access their own sessions and tasks`);
+    console.log(`📱 Use the web interface to manage your WhatsApp sessions`);
     console.log(`🛑 To stop any task, use the web interface or API`);
     console.log(`\n⚡ Ready to send bulk messages!`);
 });
