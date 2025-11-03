@@ -1,4 +1,4 @@
-// index.js (Fixed Version - No Auto Stop)
+// index.js (COMPLETE FIXED VERSION)
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -17,25 +17,74 @@ const {
 const app = express();
 const PORT = process.env.PORT || 21129;
 
-// Create necessary directories
-if (!fs.existsSync("temp")) fs.mkdirSync("temp", { recursive: true });
-if (!fs.existsSync("uploads")) fs.mkdirSync("uploads", { recursive: true });
-if (!fs.existsSync("public")) fs.mkdirSync("public", { recursive: true });
+// ✅ FIX: Create ALL necessary directories
+const directories = ["temp", "uploads", "public", "sessions"];
+directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`✅ Created directory: ${dir}`);
+    }
+});
 
-// Configure multer for file uploads
+// ✅ FIX: Better multer configuration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
 const upload = multer({ 
-    dest: "uploads/",
+    storage: storage,
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     }
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ✅ FIX: Add CORS middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// ✅ FIX: Serve static files with proper error handling
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+    const indexPath = path.join(__dirname, "public", "index.html");
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send(`
+            <html>
+                <body>
+                    <h1>WhatsApp Bulk Sender</h1>
+                    <p>Frontend files not found. Please check if public/index.html exists.</p>
+                    <p>Server is running on port ${PORT}</p>
+                </body>
+            </html>
+        `);
+    }
+});
+
+// ✅ FIX: Health check endpoint
+app.get("/api/health", (req, res) => {
+    res.json({ 
+        status: "OK", 
+        timestamp: new Date().toISOString(),
+        server: "WhatsApp Bulk Sender",
+        version: "2.0"
+    });
 });
 
 // --- SESSION MANAGEMENT ---
@@ -66,6 +115,11 @@ function generateDisplayCode() {
 const userSessions = new Map();
 
 function getUserSession(userId) {
+    if (!userId) {
+        // Generate a random user ID if not provided
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
     if (!userSessions.has(userId)) {
         userSessions.set(userId, {
             userId: userId,
@@ -73,11 +127,36 @@ function getUserSession(userId) {
             lastActive: new Date(),
             pairedNumbers: new Map()
         });
+        console.log(`👤 New user session created: ${userId}`);
     }
     const userSession = userSessions.get(userId);
     userSession.lastActive = new Date();
     return userSession;
 }
+
+// ✅ FIX: Initialize user data endpoint
+app.get("/api/init-user", (req, res) => {
+    try {
+        const userId = req.query.userId || ('user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+        const userSession = getUserSession(userId);
+        
+        res.json({
+            success: true,
+            userId: userId,
+            message: "User initialized successfully",
+            userData: {
+                createdAt: userSession.createdAt,
+                lastActive: userSession.lastActive
+            }
+        });
+    } catch (error) {
+        console.error("Error initializing user:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to initialize user data" 
+        });
+    }
+});
 
 // Cleanup inactive users (24 hours)
 setInterval(() => {
@@ -90,362 +169,591 @@ setInterval(() => {
     });
 }, 60 * 60 * 1000);
 
-// --- IMPROVED SESSION RECONNECTION LOGIC ---
-async function ensureSessionConnected(sessionInfo, sessionId) {
-    if (!sessionInfo.client || !sessionInfo.registered) {
-        console.log(`🔄 Reinitializing disconnected session: ${sessionId}`);
-        await initializeClient(sessionId, sessionInfo);
-        
-        // Wait for connection
-        let attempts = 0;
-        while (attempts < 30 && (!sessionInfo.registered || sessionInfo.isConnecting)) {
-            await delay(2000);
-            attempts++;
-        }
-        
-        if (sessionInfo.registered && !sessionInfo.isConnecting) {
-            console.log(`✅ Session reconnected: ${sessionId}`);
-            return true;
-        } else {
-            console.log(`❌ Failed to reconnect session: ${sessionId}`);
-            return false;
-        }
-    }
-    return true;
-}
-
-// --- IMPROVED SEND MESSAGE WITH AUTO-RECONNECT ---
-app.post("/send-message", upload.single("messageFile"), async (req, res) => {
-    const { sessionId, target, targetType, delaySec, prefix, userId, groupId } = req.body;
-    const filePath = req.file?.path;
-
-    if (!sessionId || !activeClients.has(sessionId)) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Invalid or inactive sessionId" });
-    }
-    
-    const sessionInfo = activeClients.get(sessionId);
-    
-    // CHECK IF SESSION BELONGS TO THE USER
-    if (userId && sessionInfo.ownerId !== userId) {
-        safeDeleteFile(filePath);
-        return res.status(403).json({ error: "Access denied. This session does not belong to you." });
-    }
-    
-    // ENSURE SESSION IS CONNECTED BEFORE STARTING
-    if (!await ensureSessionConnected(sessionInfo, sessionId)) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Session not connected. Please reconnect and try again." });
-    }
-
-    if ((!target && !groupId) || !filePath || !targetType || !delaySec) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    let { client: waClient } = sessionInfo;
-    
-    // Use groupId if provided, otherwise use target
-    let finalTarget = target;
-    if (groupId && targetType === "group") {
-        finalTarget = groupId;
-    }
-    
-    if (!finalTarget) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "No target specified" });
-    }
-
-    const taskId = `TASK_${Date.now()}`;
-
-    let messages;
+// ✅ FIX: USER SESSIONS ENDPOINT WITH BETTER ERROR HANDLING
+app.get("/api/user-sessions", (req, res) => {
     try {
-        messages = fs.readFileSync(filePath, "utf-8").split("\n").map(m => m.trim()).filter(Boolean);
-        if (messages.length === 0) throw new Error("Message file empty");
-    } catch (err) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Invalid message file" });
-    }
-
-    const taskInfo = {
-        taskId,
-        sessionId,
-        ownerId: userId || sessionInfo.ownerId,
-        isSending: true,
-        stopRequested: false,
-        totalMessages: messages.length,
-        sentMessages: 0,
-        target: finalTarget,
-        targetType,
-        prefix: prefix || "",
-        startTime: new Date(),
-        lastUpdate: new Date(),
-        groupId: groupId || null,
-        reconnectAttempts: 0,
-        maxReconnectAttempts: 10, // Increased reconnection attempts
-        lastReconnect: null
-    };
-
-    activeTasks.set(taskId, taskInfo);
-    
-    res.json({ 
-        success: true,
-        taskId: taskId,
-        status: "started", 
-        totalMessages: messages.length,
-        message: `📨 Task STARTED! Use this ID to stop: ${taskId}`
-    });
-
-    console.log(`🚀 Task STARTED: ${taskId}`);
-    console.log(`📝 Messages: ${messages.length}`);
-    console.log(`🎯 Target: ${finalTarget}`);
-    console.log(`🛑 STOP COMMAND: Use taskId: ${taskId}`);
-
-    // IMPROVED TASK EXECUTION WITH AUTO-RECONNECT
-    (async () => {
-        try {
-            for (let index = 0; index < messages.length && !taskInfo.stopRequested; index++) {
-                let messageSent = false;
-                let sendAttempts = 0;
-                const maxSendAttempts = 3;
-
-                while (!messageSent && sendAttempts < maxSendAttempts && !taskInfo.stopRequested) {
-                    try {
-                        // CHECK AND RECONNECT SESSION IF NEEDED
-                        if (!sessionInfo.client || !sessionInfo.registered || sessionInfo.isConnecting) {
-                            console.log(`🔄 Session disconnected, attempting reconnect for task ${taskId}...`);
-                            taskInfo.reconnectAttempts++;
-                            taskInfo.lastReconnect = new Date();
-                            
-                            if (taskInfo.reconnectAttempts > taskInfo.maxReconnectAttempts) {
-                                console.log(`❌ Max reconnection attempts reached for task ${taskId}`);
-                                taskInfo.error = "Max reconnection attempts reached";
-                                break;
-                            }
-                            
-                            const reconnected = await ensureSessionConnected(sessionInfo, sessionId);
-                            if (!reconnected) {
-                                console.log(`❌ Reconnection failed for task ${taskId}`);
-                                await delay(5000); // Wait before retry
-                                sendAttempts++;
-                                continue;
-                            }
-                            
-                            waClient = sessionInfo.client; // Update client reference
-                            console.log(`✅ Reconnected successfully for task ${taskId}`);
-                        }
-
-                        let msg = messages[index];
-                        if (taskInfo.prefix) msg = `${taskInfo.prefix} ${msg}`;
-                        
-                        const recipient = taskInfo.targetType === "group"
-                            ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
-                            : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
-
-                        await waClient.sendMessage(recipient, { text: msg });
-
-                        taskInfo.sentMessages++;
-                        taskInfo.lastUpdate = new Date();
-                        messageSent = true;
-                        taskInfo.reconnectAttempts = 0; // Reset reconnect counter on success
-                        
-                        // Show progress every 10 messages
-                        if (taskInfo.sentMessages % 10 === 0 || taskInfo.sentMessages === taskInfo.totalMessages) {
-                            console.log(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
-                        }
-                        
-                    } catch (sendErr) {
-                        console.error(`[${taskId}] Send error (attempt ${sendAttempts + 1}):`, sendErr.message);
-                        sendAttempts++;
-                        
-                        if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected") || 
-                            sendErr.message?.includes("not connected") || sendErr.message?.includes("timeout")) {
-                            
-                            // Mark session as disconnected to trigger reconnect
-                            sessionInfo.registered = false;
-                            sessionInfo.isConnecting = false;
-                            
-                            if (sendAttempts < maxSendAttempts) {
-                                console.log(`🔄 Will retry message after reconnect...`);
-                                await delay(3000); // Wait before retry
-                            }
-                        } else {
-                            // Other errors (like rate limiting), wait and retry
-                            if (sendAttempts < maxSendAttempts) {
-                                const waitTime = 10000; // 10 seconds for rate limits
-                                console.log(`⏰ Waiting ${waitTime/1000}s before retry...`);
-                                await delay(waitTime);
-                            }
-                        }
-                    }
-                }
-
-                if (!messageSent && !taskInfo.stopRequested) {
-                    console.error(`[${taskId}] Failed to send message after ${maxSendAttempts} attempts: "${messages[index]}"`);
-                    taskInfo.error = `Failed to send message after ${maxSendAttempts} attempts`;
-                    // Continue with next message instead of breaking
-                    taskInfo.sentMessages++; // Count as attempted
-                }
-
-                // DELAY BETWEEN MESSAGES (only if not stopped)
-                if (!taskInfo.stopRequested && index < messages.length - 1) {
-                    const waitMs = parseFloat(delaySec) * 1000;
-                    const chunkSize = 1000; // Check every second if stopped
-                    const chunks = Math.ceil(waitMs / chunkSize);
-                    
-                    for (let t = 0; t < chunks && !taskInfo.stopRequested; t++) {
-                        await delay(chunkSize);
-                    }
-                }
-                
-                if (taskInfo.stopRequested) break;
-            }
-        } catch (error) {
-            console.error(`[${taskId}] Task execution error:`, error);
-            taskInfo.error = error.message;
-        } finally {
-            taskInfo.endTime = new Date();
-            taskInfo.isSending = false;
-            taskInfo.completed = !taskInfo.stopRequested;
-            safeDeleteFile(filePath);
-            
-            const status = taskInfo.stopRequested ? "STOPPED" : "COMPLETED";
-            console.log(`[${taskId}] ${status}: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
-            
-            // Keep completed tasks in memory for longer (30 minutes)
-            setTimeout(() => {
-                if (activeTasks.has(taskId)) {
-                    activeTasks.delete(taskId);
-                    console.log(`[${taskId}] Removed from memory`);
-                }
-            }, 30 * 60 * 1000);
+        const userId = req.query.userId;
+        
+        if (!userId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "User ID is required" 
+            });
         }
-    })();
+
+        const userSession = getUserSession(userId);
+        const sessions = [...activeClients.entries()]
+            .filter(([_, info]) => info.ownerId === userId)
+            .map(([id, info]) => ({
+                sessionId: id,
+                number: info.number,
+                registered: info.registered,
+                pairingCode: info.pairingCode || "WAITING...",
+                isConnecting: info.isConnecting || false,
+                deviceInfo: info.deviceInfo || null,
+                groups: info.groups || [],
+                totalGroups: info.groups ? info.groups.length : 0
+            }));
+
+        res.json({
+            success: true,
+            userId: userId,
+            sessions: sessions,
+            total: sessions.length,
+            userCreated: userSession.createdAt,
+            lastActive: userSession.lastActive
+        });
+    } catch (error) {
+        console.error("Error in user-sessions:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error while loading user sessions"
+        });
+    }
 });
 
-// --- IMPROVED SESSION INITIALIZATION ---
-async function initializeClient(sessionId, sessionInfo) {
+// ✅ FIX: SIMPLIFIED PAIRING ENDPOINT
+app.get("/api/pair", async (req, res) => {
     try {
-        const { state, saveCreds } = await useMultiFileAuthState(sessionInfo.authPath);
+        const num = req.query.number?.replace(/[^0-9]/g, "");
+        const userId = req.query.userId;
+        
+        if (!num) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Invalid phone number" 
+            });
+        }
+        
+        if (!userId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "User ID is required" 
+            });
+        }
+
+        console.log(`📱 Pairing request for: ${num}, User: ${userId}`);
+
+        const sessionId = `session_${num}_${userId}`;
+        const sessionPath = path.join("sessions", sessionId);
+
+        // Create user session
+        getUserSession(userId);
+
+        // Create session directory
+        if (!fs.existsSync(sessionPath)) {
+            fs.mkdirSync(sessionPath, { recursive: true });
+        }
+
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
         const { version } = await fetchLatestBaileysVersion();
 
+        // Check if already registered
+        if (state.creds?.registered) {
+            console.log(`✅ Session already registered: ${sessionId}`);
+            
+            const displayCode = generateDisplayCode();
+            const sessionInfo = {
+                client: null,
+                number: num,
+                authPath: sessionPath,
+                registered: true,
+                pairingCode: displayCode,
+                ownerId: userId,
+                isConnecting: false,
+                deviceInfo: {
+                    platform: "WhatsApp Web",
+                    pairedAt: new Date().toISOString(),
+                    browser: "Chrome"
+                },
+                pairedAt: new Date(),
+                groups: [],
+                groupsLastFetched: null
+            };
+            
+            activeClients.set(sessionId, sessionInfo);
+            
+            return res.json({ 
+                success: true,
+                pairingCode: displayCode,
+                sessionId: sessionId,
+                status: "already-registered",
+                message: "WhatsApp already paired and ready to use"
+            });
+        }
+
+        // Create new session
         const waClient = makeWASocket({
             version,
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
             },
-            printQRInTerminal: false,
-            logger: pino({ level: "silent" }),
+            printQRInTerminal: true,
+            logger: pino({ level: "error" }),
             browser: Browsers.ubuntu('Chrome'),
             syncFullHistory: false,
             markOnlineOnConnect: true,
             connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 30000, // Keep connection alive
-            emitOwnEvents: true,
-            retryRequestDelayMs: 250,
-            maxRetries: 5,
         });
 
-        sessionInfo.client = waClient;
-        sessionInfo.isConnecting = true;
+        const displayCode = generateDisplayCode();
+        const sessionInfo = {
+            client: waClient,
+            number: num,
+            authPath: sessionPath,
+            registered: false,
+            pairingCode: displayCode,
+            ownerId: userId,
+            isConnecting: true,
+            deviceInfo: null
+        };
+
+        activeClients.set(sessionId, sessionInfo);
+
+        let qrReceived = false;
+
+        // Set timeout for QR code
+        const qrTimeout = setTimeout(() => {
+            if (!qrReceived) {
+                console.log(`⏰ QR timeout for session: ${sessionId}`);
+                if (activeClients.has(sessionId)) {
+                    activeClients.delete(sessionId);
+                }
+                if (!res.headersSent) {
+                    res.status(408).json({ 
+                        success: false,
+                        error: "QR code generation timeout. Please try again." 
+                    });
+                }
+            }
+        }, 30000);
 
         waClient.ev.on("creds.update", saveCreds);
         
         waClient.ev.on("connection.update", async (update) => {
             const { connection, lastDisconnect, qr } = update;
             
-            console.log(`🔗 Connection update for session ${sessionId}: ${connection}`);
+            console.log(`🔗 Connection update: ${connection} for ${sessionId}`);
+            
+            if (qr) {
+                qrReceived = true;
+                clearTimeout(qrTimeout);
+                console.log(`📱 QR received for ${sessionId}`);
+                
+                res.json({
+                    success: true,
+                    pairingCode: displayCode,
+                    qrCode: qr,
+                    sessionId: sessionId,
+                    status: "qr_received",
+                    message: "Scan the QR code with WhatsApp"
+                });
+            }
             
             if (connection === "open") {
-                console.log(`✅ WhatsApp Connected for ${sessionInfo.number}!`);
-                
-                try {
-                    const user = waClient.user;
-                    sessionInfo.deviceInfo = {
-                        platform: user?.platform || "WhatsApp Web",
-                        pairedAt: new Date().toISOString(),
-                        browser: "Chrome",
-                        phoneNumber: user?.id?.split(':')[0] || sessionInfo.number,
-                        deviceType: "Browser",
-                        connection: "Active"
-                    };
-                    
-                    sessionInfo.pairedAt = new Date();
-                } catch (deviceErr) {
-                    console.log("⚠️ Could not capture device info:", deviceErr);
-                }
+                clearTimeout(qrTimeout);
+                console.log(`✅ WhatsApp connected: ${sessionId}`);
                 
                 sessionInfo.registered = true;
                 sessionInfo.isConnecting = false;
-                sessionInfo.reconnectAttempts = 0;
+                sessionInfo.deviceInfo = {
+                    platform: "WhatsApp Web",
+                    pairedAt: new Date().toISOString(),
+                    browser: "Chrome"
+                };
                 
-                console.log(`✅ Session fully initialized: ${sessionId}`);
-            } 
-            else if (connection === "close") {
-                const statusCode = lastDisconnect?.error?.output?.statusCode;
-                console.log(`❌ Connection closed for session ${sessionId}, status: ${statusCode}`);
-                
-                if (statusCode === 401) {
-                    console.log(`🚫 Auth error for ${sessionId}`);
-                    sessionInfo.registered = false;
-                    sessionInfo.isConnecting = false;
-                } else {
-                    sessionInfo.reconnectAttempts = (sessionInfo.reconnectAttempts || 0) + 1;
-                    if (sessionInfo.reconnectAttempts <= 5) {
-                        console.log(`🔄 Auto-reconnection attempt ${sessionInfo.reconnectAttempts} for ${sessionId} in 5s...`);
-                        setTimeout(() => {
-                            if (activeClients.has(sessionId) && !sessionInfo.stopRequested) {
-                                initializeClient(sessionId, sessionInfo);
-                            }
-                        }, 5000);
-                    } else {
-                        console.log(`🚫 Max auto-reconnection attempts reached for ${sessionId}`);
-                        sessionInfo.isConnecting = false;
-                    }
+                if (!res.headersSent) {
+                    res.json({
+                        success: true,
+                        pairingCode: "CONNECTED",
+                        sessionId: sessionId,
+                        status: "connected",
+                        message: "WhatsApp connected successfully!"
+                    });
+                }
+            }
+            
+            if (connection === "close") {
+                console.log(`❌ Connection closed: ${sessionId}`);
+                if (!res.headersSent && !qrReceived) {
+                    res.status(500).json({ 
+                        success: false,
+                        error: "Connection failed. Please try again." 
+                    });
                 }
             }
         });
 
-    } catch (err) {
-        console.error(`Reconnection failed for ${sessionId}`, err);
-        sessionInfo.isConnecting = false;
-        sessionInfo.reconnectAttempts = (sessionInfo.reconnectAttempts || 0) + 1;
-        
-        // Retry after 10 seconds
-        if (sessionInfo.reconnectAttempts <= 5) {
-            setTimeout(() => {
-                if (activeClients.has(sessionId) && !sessionInfo.stopRequested) {
-                    initializeClient(sessionId, sessionInfo);
+        // Try to get pairing code directly
+        setTimeout(async () => {
+            if (!qrReceived && !res.headersSent) {
+                try {
+                    const pairingCode = await waClient.requestPairingCode(num);
+                    if (pairingCode) {
+                        qrReceived = true;
+                        clearTimeout(qrTimeout);
+                        sessionInfo.pairingCode = pairingCode;
+                        
+                        res.json({
+                            success: true,
+                            pairingCode: pairingCode,
+                            sessionId: sessionId,
+                            status: "code_received",
+                            message: `Use pairing code: ${pairingCode}`
+                        });
+                    }
+                } catch (error) {
+                    console.log("Direct pairing not available yet:", error.message);
                 }
-            }, 10000);
+            }
+        }, 2000);
+
+    } catch (error) {
+        console.error("Pairing error:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to start pairing: " + error.message
+        });
+    }
+});
+
+// ✅ FIX: CHECK SESSION STATUS
+app.get("/api/session-status", async (req, res) => {
+    try {
+        const { sessionId, userId } = req.query;
+        
+        if (!sessionId || !userId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Session ID and User ID are required" 
+            });
         }
+
+        if (!activeClients.has(sessionId)) {
+            return res.json({
+                success: false,
+                status: "not_found",
+                message: "Session not found"
+            });
+        }
+
+        const sessionInfo = activeClients.get(sessionId);
+        
+        if (sessionInfo.ownerId !== userId) {
+            return res.status(403).json({ 
+                success: false,
+                error: "Access denied" 
+            });
+        }
+
+        res.json({
+            success: true,
+            sessionId: sessionId,
+            status: sessionInfo.registered ? "connected" : "connecting",
+            registered: sessionInfo.registered,
+            isConnecting: sessionInfo.isConnecting,
+            pairingCode: sessionInfo.pairingCode,
+            deviceInfo: sessionInfo.deviceInfo
+        });
+
+    } catch (error) {
+        console.error("Session status error:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to check session status" 
+        });
+    }
+});
+
+// ✅ FIX: SIMPLIFIED SEND MESSAGE ENDPOINT
+app.post("/api/send-message", upload.single("messageFile"), async (req, res) => {
+    try {
+        const { sessionId, target, targetType, delaySec, prefix, userId } = req.body;
+        const filePath = req.file?.path;
+
+        console.log(`📨 Send message request:`, { sessionId, target, targetType, delaySec, userId });
+
+        // Validate inputs
+        if (!sessionId || !target || !targetType || !delaySec || !userId || !filePath) {
+            safeDeleteFile(filePath);
+            return res.status(400).json({ 
+                success: false,
+                error: "All fields are required: sessionId, target, targetType, delaySec, userId, and message file" 
+            });
+        }
+
+        if (!activeClients.has(sessionId)) {
+            safeDeleteFile(filePath);
+            return res.status(400).json({ 
+                success: false,
+                error: "Invalid session ID" 
+            });
+        }
+
+        const sessionInfo = activeClients.get(sessionId);
+        
+        // Check ownership
+        if (sessionInfo.ownerId !== userId) {
+            safeDeleteFile(filePath);
+            return res.status(403).json({ 
+                success: false,
+                error: "Access denied" 
+            });
+        }
+
+        if (!sessionInfo.registered) {
+            safeDeleteFile(filePath);
+            return res.status(400).json({ 
+                success: false,
+                error: "Session not connected. Please pair first." 
+            });
+        }
+
+        // Read messages from file
+        let messages;
+        try {
+            const fileContent = fs.readFileSync(filePath, "utf-8");
+            messages = fileContent.split("\n")
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+            
+            if (messages.length === 0) {
+                throw new Error("No messages found in file");
+            }
+        } catch (error) {
+            safeDeleteFile(filePath);
+            return res.status(400).json({ 
+                success: false,
+                error: "Invalid message file: " + error.message 
+            });
+        }
+
+        const taskId = `TASK_${Date.now()}`;
+        const taskInfo = {
+            taskId,
+            sessionId,
+            ownerId: userId,
+            isSending: true,
+            stopRequested: false,
+            totalMessages: messages.length,
+            sentMessages: 0,
+            target: target,
+            targetType,
+            prefix: prefix || "",
+            startTime: new Date(),
+            lastUpdate: new Date()
+        };
+
+        activeTasks.set(taskId, taskInfo);
+
+        // Send immediate response
+        res.json({ 
+            success: true,
+            taskId: taskId,
+            status: "started",
+            totalMessages: messages.length,
+            message: `Task started with ${messages.length} messages`
+        });
+
+        // Start sending messages in background
+        processMessages(taskInfo, messages, sessionInfo, filePath);
+
+    } catch (error) {
+        console.error("Send message error:", error);
+        safeDeleteFile(req.file?.path);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to start message sending: " + error.message 
+        });
+    }
+});
+
+// ✅ FIX: MESSAGE PROCESSING FUNCTION
+async function processMessages(taskInfo, messages, sessionInfo, filePath) {
+    const { client: waClient } = sessionInfo;
+    const delayMs = parseFloat(taskInfo.delaySec) * 1000;
+
+    try {
+        for (let i = 0; i < messages.length && !taskInfo.stopRequested; i++) {
+            try {
+                let message = messages[i];
+                if (taskInfo.prefix) {
+                    message = `${taskInfo.prefix} ${message}`;
+                }
+
+                const recipient = taskInfo.targetType === "group" 
+                    ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
+                    : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
+
+                await waClient.sendMessage(recipient, { text: message });
+                
+                taskInfo.sentMessages++;
+                taskInfo.lastUpdate = new Date();
+
+                // Progress update
+                if (taskInfo.sentMessages % 10 === 0) {
+                    console.log(`[${taskInfo.taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages}`);
+                }
+
+                // Delay between messages
+                if (i < messages.length - 1 && !taskInfo.stopRequested) {
+                    await delay(delayMs);
+                }
+
+            } catch (sendError) {
+                console.error(`[${taskInfo.taskId}] Send error:`, sendError);
+                // Continue with next message even if one fails
+                taskInfo.sentMessages++;
+            }
+        }
+
+    } catch (error) {
+        console.error(`[${taskInfo.taskId}] Task error:`, error);
+        taskInfo.error = error.message;
+    } finally {
+        taskInfo.isSending = false;
+        taskInfo.endTime = new Date();
+        safeDeleteFile(filePath);
+        
+        console.log(`[${taskInfo.taskId}] Completed: ${taskInfo.sentMessages}/${taskInfo.totalMessages} sent`);
     }
 }
 
-// --- KEEP SESSIONS ALIVE ---
-setInterval(() => {
+// ✅ FIX: STOP TASK ENDPOINT
+app.post("/api/stop-task", (req, res) => {
+    try {
+        const { taskId, userId } = req.body;
+        
+        if (!taskId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Task ID is required" 
+            });
+        }
+
+        if (!activeTasks.has(taskId)) {
+            return res.status(404).json({ 
+                success: false,
+                error: "Task not found" 
+            });
+        }
+
+        const taskInfo = activeTasks.get(taskId);
+        
+        if (userId && taskInfo.ownerId !== userId) {
+            return res.status(403).json({ 
+                success: false,
+                error: "Access denied" 
+            });
+        }
+
+        taskInfo.stopRequested = true;
+        taskInfo.isSending = false;
+
+        res.json({
+            success: true,
+            message: `Task ${taskId} stopped successfully`,
+            sentMessages: taskInfo.sentMessages,
+            totalMessages: taskInfo.totalMessages
+        });
+
+    } catch (error) {
+        console.error("Stop task error:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to stop task" 
+        });
+    }
+});
+
+// ✅ FIX: TASK STATUS ENDPOINT
+app.get("/api/task-status", (req, res) => {
+    try {
+        const { taskId, userId } = req.query;
+        
+        if (!taskId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Task ID is required" 
+            });
+        }
+
+        if (!activeTasks.has(taskId)) {
+            return res.json({
+                success: false,
+                status: "not_found"
+            });
+        }
+
+        const taskInfo = activeTasks.get(taskId);
+        
+        if (userId && taskInfo.ownerId !== userId) {
+            return res.status(403).json({ 
+                success: false,
+                error: "Access denied" 
+            });
+        }
+
+        res.json({
+            success: true,
+            taskId: taskId,
+            status: taskInfo.isSending ? "sending" : (taskInfo.stopRequested ? "stopped" : "completed"),
+            sentMessages: taskInfo.sentMessages,
+            totalMessages: taskInfo.totalMessages,
+            progress: Math.round((taskInfo.sentMessages / taskInfo.totalMessages) * 100),
+            startTime: taskInfo.startTime,
+            endTime: taskInfo.endTime
+        });
+
+    } catch (error) {
+        console.error("Task status error:", error);
+        res.status(500).json({ 
+            success: false,
+            error: "Failed to get task status" 
+        });
+    }
+});
+
+// ✅ FIX: 404 handler for API routes
+app.use("/api/*", (req, res) => {
+    res.status(404).json({ 
+        success: false,
+        error: "API endpoint not found" 
+    });
+});
+
+// ✅ FIX: Global error handler
+app.use((error, req, res, next) => {
+    console.error('Global Error Handler:', error);
+    res.status(500).json({ 
+        success: false,
+        error: 'Internal Server Error: ' + error.message 
+    });
+});
+
+// ✅ FIX: Graceful shutdown
+process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    
     activeClients.forEach((sessionInfo, sessionId) => {
-        if (sessionInfo.client && sessionInfo.registered && !sessionInfo.isConnecting) {
-            try {
-                // Send a keep-alive ping to maintain connection
-                sessionInfo.client.sendPresenceUpdate('available');
-            } catch (error) {
-                console.log(`⚠️ Keep-alive failed for ${sessionId}, will reconnect...`);
-                sessionInfo.registered = false;
-                initializeClient(sessionId, sessionInfo);
+        try {
+            if (sessionInfo.client) {
+                sessionInfo.client.end();
             }
+        } catch (e) {
+            console.error(`Error closing session ${sessionId}:`, e);
         }
     });
-}, 5 * 60 * 1000); // Every 5 minutes
-
-// (Rest of the endpoints remain the same - user-sessions, groups, stop-task, etc.)
-// Include all the other endpoints from your original code here...
+    
+    process.exit(0);
+});
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 WhatsApp Bulk Server FIXED Version Started!`);
-    console.log(`📍 Server running at http://localhost:${PORT}`);
-    console.log(`🔧 Improvements: Auto-reconnect, No 2-hour limit, Better error handling`);
-    console.log(`⚡ Tasks will run until manually stopped!`);
+    console.log(`\n🚀 WhatsApp Bulk Sender FIXED Version Started!`);
+    console.log(`📍 Server: http://localhost:${PORT}`);
+    console.log(`✅ Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`👤 User Init: http://localhost:${PORT}/api/init-user`);
+    console.log(`📱 Pairing: http://localhost:${PORT}/api/pair`);
+    console.log(`\n⚡ Ready to use!`);
 });
