@@ -1,99 +1,907 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WhatsApp Bulk Sender</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bulk Sender Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
-        button { padding: 10px 20px; margin: 5px; }
-        input, select { padding: 8px; margin: 5px; }
-        .success { color: green; }
-        .error { color: red; }
+        :root {
+            --primary: #25D366;
+            --dark: #1e1e1e;
+            --darker: #121212;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #128C7E 100%);
+            padding: 30px 0;
+            border-radius: 0 0 30px 30px;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .btn-whatsapp {
+            background: linear-gradient(135deg, var(--primary) 0%, #128C7E 100%);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-whatsapp:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+        }
+        
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .status-connecting {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        
+        .status-disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+        
+        .progress-bar-custom {
+            background: linear-gradient(90deg, var(--primary) 0%, #128C7E 100%);
+            border-radius: 10px;
+        }
+        
+        .session-card {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .task-card {
+            border-left: 4px solid #007bff;
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .floating-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 300px;
+        }
+        
+        .nav-tabs-custom .nav-link {
+            color: var(--light);
+            border: none;
+            padding: 15px 25px;
+        }
+        
+        .nav-tabs-custom .nav-link.active {
+            background: rgba(37, 211, 102, 0.2);
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>WhatsApp Bulk Sender</h1>
-        
-        <div class="section">
-            <h2>1. Initialize User</h2>
-            <button onclick="initUser()">Initialize User</button>
-            <div id="userStatus"></div>
-        </div>
-
-        <div class="section">
-            <h2>2. Pair WhatsApp</h2>
-            <input type="text" id="phoneNumber" placeholder="Phone number (e.g., 919876543210)">
-            <button onclick="pairWhatsApp()">Pair WhatsApp</button>
-            <div id="pairingStatus"></div>
-        </div>
-
-        <div class="section">
-            <h2>3. Send Messages</h2>
-            <input type="file" id="messageFile" accept=".txt">
-            <input type="text" id="target" placeholder="Phone number or Group ID">
-            <select id="targetType">
-                <option value="user">User</option>
-                <option value="group">Group</option>
-            </select>
-            <input type="number" id="delaySec" placeholder="Delay in seconds" value="2">
-            <button onclick="sendMessages()">Start Sending</button>
-            <div id="sendingStatus"></div>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="logo">
+                        <i class="fab fa-whatsapp me-2"></i>
+                        WhatsApp Bulk Sender Pro
+                    </div>
+                    <p class="mb-0">Send bulk messages efficiently with multiple WhatsApp sessions</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group">
+                        <button class="btn btn-whatsapp" onclick="showSection('dashboard')">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </button>
+                        <button class="btn btn-outline-light" onclick="showSection('sessions')">
+                            <i class="fas fa-mobile-alt me-2"></i>Sessions
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        let currentUserId = null;
+    <div class="container">
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
 
-        async function initUser() {
-            try {
-                const response = await fetch('/api/init-user');
-                const data = await response.json();
+        <!-- Dashboard Section -->
+        <div id="dashboard-section">
+            <div class="row">
+                <!-- Stats Cards -->
+                <div class="col-md-3">
+                    <div class="glass-card stats-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-number" id="totalSessions">0</div>
+                        <div>Active Sessions</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stats-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-paper-plane"></i>
+                        </div>
+                        <div class="stats-number" id="totalMessages">0</div>
+                        <div>Messages Sent</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stats-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="stats-number" id="activeTasks">0</div>
+                        <div>Active Tasks</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="glass-card stats-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stats-number" id="successRate">100%</div>
+                        <div>Success Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Quick Actions -->
+                <div class="col-md-6">
+                    <div class="glass-card">
+                        <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <button class="btn btn-whatsapp w-100 mb-2" onclick="showSection('sessions')">
+                                    <i class="fas fa-plus me-2"></i>Add Session
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-whatsapp w-100 mb-2" onclick="showSection('send-message')">
+                                    <i class="fas fa-paper-plane me-2"></i>Send Messages
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="col-md-6">
+                    <div class="glass-card">
+                        <h4><i class="fas fa-history me-2"></i>Recent Activity</h4>
+                        <div id="recentActivity" class="mt-3">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No recent activity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Tasks -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="glass-card">
+                        <h4><i class="fas fa-running me-2"></i>Active Tasks</h4>
+                        <div id="activeTasksList" class="mt-3">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <p>No active tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions Section -->
+        <div id="sessions-section" style="display: none;">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4><i class="fas fa-mobile-alt me-2"></i>Manage WhatsApp Sessions</h4>
+                    <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                        <i class="fas fa-plus me-2"></i>Add New Session
+                    </button>
+                </div>
+
+                <div id="sessionsList">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                        <h5>No WhatsApp sessions</h5>
+                        <p>Add your first WhatsApp session to get started</p>
+                        <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                            <i class="fas fa-plus me-2"></i>Add First Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Send Message Section -->
+        <div id="send-message-section" style="display: none;">
+            <div class="glass-card">
+                <h4><i class="fas fa-paper-plane me-2"></i>Send Bulk Messages</h4>
                 
-                if (data.success) {
-                    currentUserId = data.userId;
-                    document.getElementById('userStatus').innerHTML = 
-                        `<p class="success">✅ User initialized: ${data.userId}</p>`;
-                } else {
-                    document.getElementById('userStatus').innerHTML = 
-                        `<p class="error">❌ ${data.error}</p>`;
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Select Session</label>
+                            <select class="form-control bg-dark text-light" id="messageSession">
+                                <option value="">Choose a connected session...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Target Type</label>
+                            <select class="form-control bg-dark text-light" id="targetType">
+                                <option value="user">Personal Chat</option>
+                                <option value="group">Group</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Target Number/Group ID</label>
+                            <input type="text" class="form-control bg-dark text-light" id="target" 
+                                   placeholder="e.g., 919876543210 or group-id@g.us">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Delay Between Messages (seconds)</label>
+                            <input type="number" class="form-control bg-dark text-light" id="delaySec" 
+                                   value="2" min="1" max="60">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Message Prefix (Optional)</label>
+                            <input type="text" class="form-control bg-dark text-light" id="prefix" 
+                                   placeholder="e.g., Hello, ">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Messages File</label>
+                            <input type="file" class="form-control bg-dark text-light" id="messageFile" 
+                                   accept=".txt,.csv">
+                            <div class="form-text text-light">
+                                Upload a text file with one message per line
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Preview</label>
+                            <textarea class="form-control bg-dark text-light" id="messagePreview" 
+                                      rows="4" placeholder="Message preview will appear here..." readonly></textarea>
+                        </div>
+
+                        <button class="btn btn-whatsapp w-100" onclick="startSendingMessages()">
+                            <i class="fas fa-rocket me-2"></i>Start Sending Messages
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pairing Modal -->
+    <div class="modal fade" id="pairingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        <i class="fab fa-whatsapp me-2"></i>Pair WhatsApp Number
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" class="form-control bg-dark text-light" id="pairingNumber" 
+                                       placeholder="e.g., 919876543210" required>
+                                <div class="form-text text-light">
+                                    Include country code without + sign
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-whatsapp w-100" onclick="startPairing()">
+                                <i class="fas fa-qrcode me-2"></i>Generate QR Code
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6 text-center">
+                            <div id="qrContainer" class="mt-3" style="display: none;">
+                                <h6>Scan QR Code with WhatsApp</h6>
+                                <div class="qr-code mt-3">
+                                    <div id="qrcode"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <p class="mb-1">Or use pairing code:</p>
+                                    <h3 id="pairingCodeDisplay" class="text-primary"></h3>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Waiting for pairing...</span>
+                                    </div>
+                                    <p class="mt-2">Waiting for WhatsApp pairing...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Progress Modal -->
+    <div class="modal fade" id="taskProgressModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        <i class="fas fa-paper-plane me-2"></i>Sending Messages
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <h4 id="taskProgressText">0%</h4>
+                        <div class="progress" style="height: 20px;">
+                            <div id="taskProgressBar" class="progress-bar progress-bar-custom" 
+                                 style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small>Sent: <span id="sentCount">0</span></small>
+                        </div>
+                        <div class="col-6">
+                            <small>Total: <span id="totalCount">0</span></small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-danger-custom" onclick="stopCurrentTask()">
+                            <i class="fas fa-stop me-2"></i>Stop Sending
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <script>
+        // Global variables
+        let currentUserId = null;
+        let currentTaskId = null;
+        let taskCheckInterval = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeUser();
+            loadSessions();
+            updateStats();
+        });
+
+        // Show alert function
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHTML = `
+                <div id="${alertId}" class="floating-alert alert alert-${type} alert-dismissible fade show" role="alert">
+                    <strong>${type === 'success' ? '✅' : '❌'} ${message}</strong>
+                    <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHTML;
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                const alertElement = document.getElementById(alertId);
+                if (alertElement) alertElement.remove();
+            }, 5000);
+        }
+
+        // Initialize user
+        async function initializeUser() {
+            try {
+                // Generate random user ID or get from storage
+                currentUserId = localStorage.getItem('whatsapp_user_id');
+                if (!currentUserId) {
+                    currentUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('whatsapp_user_id', currentUserId);
                 }
+                
+                showAlert('User initialized successfully!', 'success');
             } catch (error) {
-                document.getElementById('userStatus').innerHTML = 
-                    `<p class="error">❌ Connection failed: ${error.message}</p>`;
+                showAlert('Failed to initialize user', 'danger');
             }
         }
 
-        async function pairWhatsApp() {
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            if (!phoneNumber || !currentUserId) {
-                alert('Please initialize user and enter phone number');
+        // Show section
+        function showSection(sectionName) {
+            // Hide all sections
+            document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('sessions-section').style.display = 'none';
+            document.getElementById('send-message-section').style.display = 'none';
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').style.display = 'block';
+            
+            // Load data for section
+            if (sectionName === 'sessions') {
+                loadSessions();
+            } else if (sectionName === 'send-message') {
+                loadSessionsForMessage();
+            }
+        }
+
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch(`/user-sessions?userId=${currentUserId}`);
+                const data = await response.json();
+                
+                const sessionsList = document.getElementById('sessionsList');
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    let sessionsHTML = '';
+                    
+                    data.sessions.forEach(session => {
+                        const statusClass = session.registered ? 'status-connected' : 
+                                          session.isConnecting ? 'status-connecting' : 'status-disconnected';
+                        const statusText = session.registered ? 'Connected' : 
+                                         session.isConnecting ? 'Connecting...' : 'Disconnected';
+                        
+                        sessionsHTML += `
+                            <div class="glass-card session-card mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <h6>${session.number}</h6>
+                                        <span class="${statusClass}">${statusText}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Pairing Code</small>
+                                        <div>${session.pairingCode}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Groups</small>
+                                        <div>${session.totalGroups} groups</div>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        ${session.registered ? `
+                                            <button class="btn btn-sm btn-whatsapp me-2" onclick="refreshGroups('${session.sessionId}')">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger-custom" onclick="deleteSession('${session.sessionId}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : `
+                                            <button class="btn btn-sm btn-whatsapp" onclick="reconnectSession('${session.sessionId}')">
+                                                <i class="fas fa-plug"></i> Reconnect
+                                            </button>
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    sessionsList.innerHTML = sessionsHTML;
+                } else {
+                    sessionsList.innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                            <h5>No WhatsApp sessions</h5>
+                            <p>Add your first WhatsApp session to get started</p>
+                            <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                                <i class="fas fa-plus me-2"></i>Add First Session
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                updateStats();
+            } catch (error) {
+                showAlert('Failed to load sessions', 'danger');
+            }
+        }
+
+        // Show pairing modal
+        function showPairingModal() {
+            const modal = new bootstrap.Modal(document.getElementById('pairingModal'));
+            document.getElementById('qrContainer').style.display = 'none';
+            document.getElementById('pairingNumber').value = '';
+            modal.show();
+        }
+
+        // Start pairing process
+        async function startPairing() {
+            const phoneNumber = document.getElementById('pairingNumber').value.trim();
+            
+            if (!phoneNumber) {
+                showAlert('Please enter a phone number', 'warning');
                 return;
             }
 
             try {
-                const response = await fetch(`/api/pair?number=${phoneNumber}&userId=${currentUserId}`);
+                document.getElementById('qrContainer').style.display = 'block';
+                
+                const response = await fetch(`/code?number=${phoneNumber}&userId=${currentUserId}`);
                 const data = await response.json();
                 
-                if (data.success) {
-                    document.getElementById('pairingStatus').innerHTML = 
-                        `<p class="success">✅ ${data.message}</p>` +
-                        `<p>Pairing Code: ${data.pairingCode}</p>`;
+                if (data.waCode && data.waCode !== 'ALREADY_CONNECTED') {
+                    // Display QR code
+                    const qrcodeElement = document.getElementById('qrcode');
+                    qrcodeElement.innerHTML = '';
+                    
+                    QRCode.toCanvas(qrcodeElement, data.waCode, {
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff"
+                    }, function(error) {
+                        if (error) console.error(error);
+                    });
+                    
+                    document.getElementById('pairingCodeDisplay').textContent = data.pairingCode;
+                    
+                    // Check connection status periodically
+                    const checkInterval = setInterval(async () => {
+                        const statusResponse = await fetch(`/user-sessions?userId=${currentUserId}`);
+                        const statusData = await statusResponse.json();
+                        
+                        const session = statusData.sessions.find(s => s.sessionId === data.sessionId);
+                        if (session && session.registered) {
+                            clearInterval(checkInterval);
+                            showAlert('WhatsApp paired successfully!', 'success');
+                            bootstrap.Modal.getInstance(document.getElementById('pairingModal')).hide();
+                            loadSessions();
+                        }
+                    }, 2000);
+                    
+                    // Stop checking after 2 minutes
+                    setTimeout(() => clearInterval(checkInterval), 120000);
+                    
+                } else if (data.waCode === 'ALREADY_CONNECTED') {
+                    showAlert('This number is already connected!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('pairingModal')).hide();
+                    loadSessions();
                 } else {
-                    document.getElementById('pairingStatus').innerHTML = 
-                        `<p class="error">❌ ${data.error}</p>`;
+                    showAlert('Failed to generate QR code', 'danger');
                 }
             } catch (error) {
-                document.getElementById('pairingStatus').innerHTML = 
-                    `<p class="error">❌ Connection failed: ${error.message}</p>`;
+                showAlert('Pairing failed: ' + error.message, 'danger');
             }
         }
 
-        async function sendMessages() {
-            // Implementation for sending messages
-            alert('Send messages functionality would be implemented here');
+        // Load sessions for message sending
+        async function loadSessionsForMessage() {
+            try {
+                const response = await fetch(`/user-sessions?userId=${currentUserId}`);
+                const data = await response.json();
+                
+                const sessionSelect = document.getElementById('messageSession');
+                sessionSelect.innerHTML = '<option value="">Choose a connected session...</option>';
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    data.sessions.forEach(session => {
+                        if (session.registered) {
+                            sessionSelect.innerHTML += `
+                                <option value="${session.sessionId}">
+                                    ${session.number} (${session.totalGroups} groups)
+                                </option>
+                            `;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load sessions:', error);
+            }
         }
+
+        // Start sending messages
+        async function startSendingMessages() {
+            const sessionId = document.getElementById('messageSession').value;
+            const target = document.getElementById('target').value;
+            const targetType = document.getElementById('targetType').value;
+            const delaySec = document.getElementById('delaySec').value;
+            const prefix = document.getElementById('prefix').value;
+            const fileInput = document.getElementById('messageFile');
+            
+            if (!sessionId || !target || !fileInput.files[0]) {
+                showAlert('Please fill all required fields', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('sessionId', sessionId);
+            formData.append('target', target);
+            formData.append('targetType', targetType);
+            formData.append('delaySec', delaySec);
+            formData.append('prefix', prefix);
+            formData.append('userId', currentUserId);
+            formData.append('messageFile', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/send-message', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTaskId = data.taskId;
+                    showTaskProgressModal();
+                    startTaskMonitoring();
+                    showAlert('Message sending started!', 'success');
+                } else {
+                    showAlert('Failed to start sending: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('Failed to start sending: ' + error.message, 'danger');
+            }
+        }
+
+        // Show task progress modal
+        function showTaskProgressModal() {
+            const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
+            modal.show();
+        }
+
+        // Start task monitoring
+        function startTaskMonitoring() {
+            taskCheckInterval = setInterval(async () => {
+                if (!currentTaskId) {
+                    clearInterval(taskCheckInterval);
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/task-status?taskId=${currentTaskId}&userId=${currentUserId}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed' || data.status === 'stopped') {
+                        clearInterval(taskCheckInterval);
+                        document.getElementById('taskProgressText').textContent = '100%';
+                        document.getElementById('taskProgressBar').style.width = '100%';
+                        
+                        setTimeout(() => {
+                            bootstrap.Modal.getInstance(document.getElementById('taskProgressModal')).hide();
+                            showAlert(`Task completed! Sent ${data.sentMessages}/${data.totalMessages} messages`, 'success');
+                            updateStats();
+                        }, 1000);
+                    } else {
+                        const progress = Math.round((data.sentMessages / data.totalMessages) * 100);
+                        document.getElementById('taskProgressText').textContent = progress + '%';
+                        document.getElementById('taskProgressBar').style.width = progress + '%';
+                        document.getElementById('sentCount').textContent = data.sentMessages;
+                        document.getElementById('totalCount').textContent = data.totalMessages;
+                    }
+                } catch (error) {
+                    console.error('Failed to check task status:', error);
+                }
+            }, 1000);
+        }
+
+        // Stop current task
+        async function stopCurrentTask() {
+            if (!currentTaskId) return;
+            
+            try {
+                const response = await fetch('/stop-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `taskId=${currentTaskId}&userId=${currentUserId}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Task stopped successfully', 'warning');
+                    clearInterval(taskCheckInterval);
+                    bootstrap.Modal.getInstance(document.getElementById('taskProgressModal')).hide();
+                    updateStats();
+                }
+            } catch (error) {
+                showAlert('Failed to stop task', 'danger');
+            }
+        }
+
+        // Update stats
+        async function updateStats() {
+            try {
+                const response = await fetch(`/user-stats?userId=${currentUserId}`);
+                const data = await response.json();
+                
+                if (data.stats) {
+                    document.getElementById('totalSessions').textContent = data.stats.activeSessions;
+                    document.getElementById('totalMessages').textContent = data.stats.totalMessagesSent;
+                    document.getElementById('activeTasks').textContent = data.stats.activeTasks;
+                    
+                    // Load active tasks
+                    const tasksResponse = await fetch(`/user-tasks?userId=${currentUserId}`);
+                    const tasksData = await tasksResponse.json();
+                    
+                    const activeTasksList = document.getElementById('activeTasksList');
+                    if (tasksData.tasks && tasksData.tasks.length > 0) {
+                        let tasksHTML = '';
+                        tasksData.tasks.forEach(task => {
+                            if (task.isSending) {
+                                tasksHTML += `
+                                    <div class="glass-card task-card mb-2">
+                                        <div class="row align-items-center">
+                                            <div class="col-6">
+                                                <small>Task: ${task.taskId}</small>
+                                                <div>Progress: ${task.progress}%</div>
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                <button class="btn btn-sm btn-danger-custom" onclick="stopTask('${task.taskId}')">
+                                                    <i class="fas fa-stop"></i> Stop
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        activeTasksList.innerHTML = tasksHTML;
+                    } else {
+                        activeTasksList.innerHTML = `
+                            <div class="text-center text-muted">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <p>No active tasks</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+
+        // Stop specific task
+        async function stopTask(taskId) {
+            try {
+                const response = await fetch('/stop-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `taskId=${taskId}&userId=${currentUserId}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Task stopped successfully', 'warning');
+                    updateStats();
+                }
+            } catch (error) {
+                showAlert('Failed to stop task', 'danger');
+            }
+        }
+
+        // Delete session
+        async function deleteSession(sessionId) {
+            if (!confirm('Are you sure you want to delete this session?')) return;
+            
+            try {
+                const response = await fetch('/delete-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `sessionId=${sessionId}&userId=${currentUserId}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Session deleted successfully', 'success');
+                    loadSessions();
+                }
+            } catch (error) {
+                showAlert('Failed to delete session', 'danger');
+            }
+        }
+
+        // Message file preview
+        document.getElementById('messageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const lines = content.split('\n').slice(0, 5); // Show first 5 lines
+                    document.getElementById('messagePreview').value = lines.join('\n');
+                };
+                reader.readAsText(file);
+            }
+        });
     </script>
 </body>
 </html>
