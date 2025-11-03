@@ -1,828 +1,401 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAHAN WHATSAPP SERVER</title>
+    <title>WhatsApp Bulk Message Sender</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Teko:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #666666;
-            --accent: #888888;
-            --white: #ffffff;
-            --light-gray: #f8f9fa;
-            --transparent: rgba(255, 255, 255, 0.9);
-            --neon-blue: #00f3ff;
-            --neon-glow: 0 0 10px #00f3ff, 0 0 20px #00f3ff, 0 0 30px #00f3ff;
-        }
-        
         body {
-            /* YOUR BACKGROUND IMAGE LINK PASTED HERE */
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-                        url('https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: #333;
-            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .card {
+            border: none;
             border-radius: 15px;
-            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
+            transition: transform 0.3s ease;
         }
-        
-        /* BLUE GLOWING CORNERS */
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 17px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0.7;
-        }
-        
-        .glass-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 15px;
-            z-index: -1;
-        }
-        
-        @keyframes glowing {
-            0% {
-                background-position: 0% 50%;
-                box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
-            }
-            50% {
-                background-position: 100% 50%;
-                box-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff;
-            }
-            100% {
-                background-position: 0% 50%;
-                box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
-            }
-        }
-        
-        .glass-card:hover {
+        .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            background: rgba(255, 255, 255, 0.98);
         }
-        
-        .glass-card:hover::before {
-            opacity: 1;
-            animation: glowing 1.5s ease-in-out infinite;
-        }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 30px 0;
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 0 0 32px 32px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0.7;
-        }
-        
-        .header::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 0 0 30px 30px;
-            z-index: -1;
-        }
-        
-        .logo {
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin-bottom: 10px;
-            color: #333;
-            font-family: 'Orbitron', monospace;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            background: linear-gradient(135deg, #0066ff 0%, #00f3ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-        }
-        
-        .logo-subtitle {
-            font-size: 1.2rem;
-            color: #666;
-            font-family: 'Teko', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .btn-primary-custom {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #333;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-primary-custom::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 27px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .btn-primary-custom:hover::before {
-            opacity: 0.7;
-        }
-        
-        .btn-primary-custom:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            background: rgba(255, 255, 255, 1);
-            color: #333;
-        }
-        
-        .btn-danger-custom {
-            background: rgba(220, 53, 69, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(220, 53, 69, 0.3);
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
             padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
         }
-        
-        .status-connected {
-            color: #28a745;
-            font-weight: bold;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            border: none;
+            border-radius: 8px;
         }
-        
-        .status-connecting {
-            color: #ffc107;
-            font-weight: bold;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            border-radius: 8px;
         }
-        
-        .status-disconnected {
-            color: #dc3545;
-            font-weight: bold;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-        }
-        
         .qr-code {
             background: white;
             padding: 20px;
-            border-radius: 15px;
-            max-width: 250px;
-            margin: 0 auto;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .qr-code::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 17px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0.5;
-        }
-        
-        .progress-bar-custom {
-            background: linear-gradient(90deg, #0066ff 0%, #00f3ff 100%);
             border-radius: 10px;
+            text-align: center;
+            margin: 10px 0;
         }
-        
+        .status-connected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .status-connecting {
+            color: #ffc107;
+            font-weight: bold;
+        }
         .session-card {
-            border-left: 4px solid #0066ff;
+            border-left: 4px solid #667eea;
         }
-        
         .task-card {
-            border-left: 4px solid #00f3ff;
+            border-left: 4px solid #56ab2f;
         }
-        
-        .stats-card {
-            text-align: center;
-            padding: 20px;
+        .progress {
+            height: 10px;
+            border-radius: 5px;
         }
-        
-        .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #333;
-            font-family: 'Orbitron', monospace;
-        }
-        
-        .feature-icon {
-            font-size: 2rem;
-            color: #0066ff;
-            margin-bottom: 15px;
-        }
-        
-        .floating-alert {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-            min-width: 300px;
-            backdrop-filter: blur(10px);
+        .user-stats {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
             border-radius: 10px;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-        }
-        
-        .form-control {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-            font-family: 'Rajdhani', sans-serif;
-        }
-        
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: #0066ff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 102, 255, 0.15);
-        }
-        
-        .modal-content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(25px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            font-family: 'Rajdhani', sans-serif;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 22px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0.5;
-        }
-        
-        .hero-section {
-            text-align: center;
-            padding: 50px 0;
-            margin-bottom: 30px;
-        }
-        
-        .hero-title {
-            font-size: 3rem;
-            font-weight: bold;
+            padding: 15px;
             margin-bottom: 20px;
-            color: #333;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
-        .hero-subtitle {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 30px;
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0;
         }
-        
-        .nav-pills-custom .nav-link {
-            background: rgba(255, 255, 255, 0.7);
-            color: #333;
-            border-radius: 15px;
-            margin: 5px;
-            padding: 12px 20px;
-            transition: all 0.3s ease;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            position: relative;
-            overflow: hidden;
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
         }
-        
-        .nav-pills-custom .nav-link::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 17px;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .nav-pills-custom .nav-link.active::before {
-            opacity: 0.7;
-        }
-        
-        .nav-pills-custom .nav-link.active {
-            background: rgba(255, 255, 255, 0.95);
-            color: #333;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .badge-custom {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            border-radius: 10px;
-            padding: 5px 10px;
-            font-weight: 600;
-        }
-        
-        /* Elegant animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #0066ff 0%, #00f3ff 100%);
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #00f3ff 0%, #0066ff 100%);
-        }
-        
-        .background-settings {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        .settings-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .settings-btn::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            border-radius: 50%;
-            z-index: -1;
-            animation: glowing 3s ease-in-out infinite;
-            opacity: 0.7;
-        }
-        
-        .settings-btn:hover {
-            transform: rotate(30deg);
-            background: rgba(255, 255, 255, 1);
-        }
-        
-        /* Tech elements */
-        .tech-border {
-            position: relative;
-            padding: 2px;
-            border-radius: 15px;
-            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
-            background-size: 400% 400%;
-            animation: glowing 3s ease-in-out infinite;
-        }
-        
-        .tech-border-inner {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 13px;
+        .tab-content {
+            background: white;
+            border-radius: 0 0 15px 15px;
             padding: 20px;
+        }
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+        }
+        .nav-tabs .nav-link {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 10px 15px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 40px;
+        }
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .group-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .group-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .group-item:hover {
+            background-color: #f8f9fa;
+        }
+        .group-item.selected {
+            background-color: #e3f2fd;
+            border-left: 3px solid #2196f3;
         }
     </style>
 </head>
 <body>
-    <!-- Background Settings Button -->
-    <div class="background-settings">
-        <button class="btn settings-btn" data-bs-toggle="modal" data-bs-target="#backgroundModal">
-            <i class="fas fa-cog"></i>
-        </button>
-    </div>
-
-    <!-- Header with AAHAN WHATSAPP SERVER -->
-    <div class="header">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <div class="logo">
-                AAHAN WHATSAPP SERVER
-            </div>
-            <div class="logo-subtitle">
-                Professional Bulk Messaging Platform
+            <a class="navbar-brand" href="#">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjQ3MiAxNC4wODVDMTcuMDE2IDE0LjA4NSAxNi41OTYgMTQuMjU2IDE2LjI3MiAxNC41NTZDMTUuNjMyIDE1LjE2IDE0Ljk2OCAxNS43NTIgMTQuMjg4IDE2LjMyOEMxMy44NzIgMTYuNjY0IDEzLjM0OCAxNi44NDggMTIuODA4IDE2Ljg0OEMxMi4yNjggMTYuODQ4IDExLjc0NCAxNi42NjQgMTEuMzI4IDE2LjMyOEMxMC42NDggMTUuNzUyIDkuOTg0IDE1LjE2IDkuMzQ0IDE0LjU1NkM5LjAyIDE0LjI1NiA4LjYgMTQuMDg1IDguMTQ0IDE0LjA4NUM3LjY4OCAxNC4wODUgNy4yNjggMTQuMjU2IDYuOTQ0IDE0LjU1NkM2LjMwNCAxNS4xNiA1LjY0IDE1Ljc1MiA0Ljk2IDE2LjMyOEM0LjU0NCAxNi42NjQgNC4wMiAxNi44NDggMy40OCAxNi44NDhDMy4yMiAxNi44NDggMi45NjggMTYuNzkyIDIuNzMyIDE2LjY4QzIuNDk2IDE2LjU2OCAyLjI4OCAxNi40MDQgMi4xMiAxNi4yQzEuOTUyIDE1Ljk5NiAxLjgyOCAxNS43NTIgMS43NTIgMTUuNDhDNS4wNTYgNi42MTYgMTEuMzI4IDIuMTYgMTcuNDcyIDIuMTZDMTcuNzMyIDIuMTYgMTcuOTg0IDIuMjA4IDE4LjIyIDIuMzJDMTguNDU2IDIuNDMyIDE4LjY2NCAyLjU5NiAxOC44MzIgMi44QzE5LjAwOCAzLjAwNCAxOS4xMzIgMy4yNDggMTkuMjA4IDMuNTJDMTkuNjE2IDUuMDY0IDE5LjgyNCA2LjY0OCAxOS44MjQgOC4yNTZDMTkuODI0IDkuODY0IDE5LjYxNiAxMS40NDggMTkuMjA4IDEyLjk5MkMxOS4xMzIgMTMuMjY0IDE5LjAwOCAxMy41MDggMTguODMyIDEzLjcxMkMxOC42NjQgMTMuOTE2IDE4LjQ1NiAxNC4wOCAxOC4yMiAxNC4xOTJDMTcuOTg0IDE0LjMwNCAxNy43MzIgMTQuMzUyIDE3LjQ3MiAxNC4zNTJWMTQuMDg1WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+" class="logo" alt="WhatsApp">
+                WhatsApp Bulk Sender
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item">
+                    <span class="navbar-text">
+                        <i class="fas fa-user me-1"></i>
+                        <span id="currentUser">User</span>
+                    </span>
+                </div>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="container">
-        <!-- Alert Container -->
-        <div id="alertContainer"></div>
-
-        <!-- Navigation -->
-        <div class="glass-card mb-4">
-            <ul class="nav nav-pills nav-pills-custom justify-content-center">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#" onclick="showSection('dashboard')">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" onclick="showSection('sessions')">
-                        <i class="fas fa-mobile-alt me-2"></i>Sessions
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" onclick="showSection('send-message')">
-                        <i class="fas fa-paper-plane me-2"></i>Send Messages
-                    </a>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="animate-fade-in">
-            <div class="row">
-                <!-- Stats Cards -->
+    <div class="container mt-4">
+        <!-- User Stats -->
+        <div class="user-stats">
+            <div class="row text-center">
                 <div class="col-md-3">
-                    <div class="glass-card stats-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stats-number" id="totalSessions">0</div>
-                        <div>Active Sessions</div>
-                    </div>
+                    <h3 class="stat-number" id="totalSessions">0</h3>
+                    <div class="stat-label">Connected Sessions</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="glass-card stats-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-paper-plane"></i>
-                        </div>
-                        <div class="stats-number" id="totalMessages">0</div>
-                        <div>Messages Sent</div>
-                    </div>
+                    <h3 class="stat-number" id="activeTasks">0</h3>
+                    <div class="stat-label">Active Tasks</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="glass-card stats-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <div class="stats-number" id="activeTasks">0</div>
-                        <div>Active Tasks</div>
-                    </div>
+                    <h3 class="stat-number" id="totalMessages">0</h3>
+                    <div class="stat-label">Messages Sent</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="glass-card stats-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="stats-number" id="successRate">100%</div>
-                        <div>Success Rate</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-4">
-                <!-- Quick Actions -->
-                <div class="col-md-6">
-                    <div class="glass-card">
-                        <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
-                        <div class="row mt-3">
-                            <div class="col-6">
-                                <button class="btn btn-primary-custom w-100 mb-2" onclick="showSection('sessions')">
-                                    <i class="fas fa-plus me-2"></i>Add Session
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-primary-custom w-100 mb-2" onclick="showSection('send-message')">
-                                    <i class="fas fa-paper-plane me-2"></i>Send Messages
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="col-md-6">
-                    <div class="glass-card">
-                        <h4><i class="fas fa-history me-2"></i>Recent Activity</h4>
-                        <div id="recentActivity" class="mt-3">
-                            <div class="text-center text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>No recent activity</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Tasks -->
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="glass-card">
-                        <h4><i class="fas fa-running me-2"></i>Active Tasks</h4>
-                        <div id="activeTasksList" class="mt-3">
-                            <div class="text-center text-muted">
-                                <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                <p>No active tasks</p>
-                            </div>
-                        </div>
-                    </div>
+                    <h3 class="stat-number" id="userSince">-</h3>
+                    <div class="stat-label">User Since</div>
                 </div>
             </div>
         </div>
 
-        <!-- Sessions Section -->
-        <div id="sessions-section" style="display: none;" class="animate-fade-in">
-            <div class="glass-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4><i class="fas fa-mobile-alt me-2"></i>Manage WhatsApp Sessions</h4>
-                    <button class="btn btn-primary-custom" onclick="showPairingModal()">
-                        <i class="fas fa-plus me-2"></i>Add New Session
-                    </button>
-                </div>
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
+                    <i class="fas fa-mobile-alt me-2"></i>Sessions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="send-tab" data-bs-toggle="tab" data-bs-target="#send" type="button" role="tab">
+                    <i class="fas fa-paper-plane me-2"></i>Send Messages
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                    <i class="fas fa-tasks me-2"></i>Tasks
+                </button>
+            </li>
+        </ul>
 
-                <div id="sessionsList">
-                    <div class="text-center text-muted py-5">
-                        <i class="fas fa-mobile-alt fa-3x mb-3"></i>
-                        <h5>No WhatsApp sessions</h5>
-                        <p>Add your first WhatsApp session to get started</p>
-                        <button class="btn btn-primary-custom" onclick="showPairingModal()">
-                            <i class="fas fa-plus me-2"></i>Add First Session
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Send Message Section -->
-        <div id="send-message-section" style="display: none;" class="animate-fade-in">
-            <div class="glass-card">
-                <h4><i class="fas fa-paper-plane me-2"></i>Send Bulk Messages</h4>
-                
-                <div class="row mt-4">
+        <div class="tab-content" id="myTabContent">
+            <!-- Sessions Tab -->
+            <div class="tab-pane fade show active" id="sessions" role="tabpanel">
+                <div class="row">
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Select Session</label>
-                            <select class="form-control" id="messageSession">
-                                <option value="">Choose a connected session...</option>
-                            </select>
+                        <div class="card session-card">
+                            <div class="card-header">
+                                <i class="fas fa-plus-circle me-2"></i>Pair New Number
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">User ID</label>
+                                    <input type="text" class="form-control" id="userId" placeholder="Enter your user ID" value="user_<?php echo rand(1000, 9999); ?>">
+                                    <div class="form-text">This ID will be used to manage your sessions</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">WhatsApp Number</label>
+                                    <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 919876543210">
+                                    <div class="form-text">Enter number with country code (without +)</div>
+                                </div>
+                                <button class="btn btn-primary w-100" onclick="pairNumber()">
+                                    <i class="fas fa-qrcode me-2"></i>Get Pairing Code
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Target Type</label>
-                            <select class="form-control" id="targetType">
-                                <option value="user">Personal Chat</option>
-                                <option value="group">Group</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Target Number/Group ID</label>
-                            <input type="text" class="form-control" id="target" 
-                                   placeholder="e.g., 919876543210 or group-id@g.us">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Delay Between Messages (seconds)</label>
-                            <input type="number" class="form-control" id="delaySec" 
-                                   value="2" min="1" max="60">
+                        <div class="card" id="qrCard" style="display: none;">
+                            <div class="card-header">
+                                <i class="fas fa-qrcode me-2"></i>Pairing Code
+                            </div>
+                            <div class="card-body text-center">
+                                <div id="pairingStatus" class="alert alert-info">
+                                    Getting pairing code...
+                                </div>
+                                <div class="qr-code" id="qrContainer">
+                                    <!-- QR code will appear here -->
+                                </div>
+                                <div id="pairingInstructions" class="mt-3">
+                                    <p><strong>Instructions:</strong></p>
+                                    <ol class="text-start">
+                                        <li>Open WhatsApp on your phone</li>
+                                        <li>Go to Settings → Linked Devices</li>
+                                        <li>Tap on "Link a Device"</li>
+                                        <li>Scan the QR code above or enter the 8-digit code</li>
+                                    </ol>
+                                </div>
+                                <button class="btn btn-secondary mt-2" onclick="hideQR()">
+                                    <i class="fas fa-times me-2"></i>Close
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Message Prefix (Optional)</label>
-                            <input type="text" class="form-control" id="prefix" 
-                                   placeholder="e.g., Hello, ">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Messages File</label>
-                            <input type="file" class="form-control" id="messageFile" 
-                                   accept=".txt,.csv">
-                            <div class="form-text">
-                                Upload a text file with one message per line
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-list me-2"></i>Active Sessions</span>
+                                <button class="refresh-btn" onclick="loadUserSessions()" title="Refresh">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Preview</label>
-                            <textarea class="form-control" id="messagePreview" 
-                                      rows="4" placeholder="Message preview will appear here..." readonly></textarea>
-                        </div>
-
-                        <button class="btn btn-primary-custom w-100" onclick="startSendingMessages()">
-                            <i class="fas fa-rocket me-2"></i>Start Sending Messages
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Background Settings Modal -->
-    <div class="modal fade" id="backgroundModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-image me-2"></i>Background Settings
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Background Image URL</label>
-                        <input type="text" class="form-control" id="backgroundUrl" 
-                               value="https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg"
-                               placeholder="Paste your image URL here">
-                        <div class="form-text">
-                            Enter a direct image link for the background
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Background Darkness</label>
-                        <input type="range" class="form-range" id="backgroundDarkness" 
-                               min="0.1" max="0.9" step="0.1" value="0.6">
-                        <div class="form-text">
-                            Adjust how dark the overlay is (for better text readability)
-                        </div>
-                    </div>
-                    <button class="btn btn-primary-custom w-100" onclick="applyBackground()">
-                        <i class="fas fa-check me-2"></i>Apply Background
-                    </button>
-                    
-                    <div class="mt-3">
-                        <h6>Quick Background Options:</h6>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-secondary" onclick="setDefaultBackground()">
-                                Default Gradient
-                            </button>
-                            <button class="btn btn-outline-secondary" onclick="setCurrentBackground()">
-                                Current Image
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pairing Modal -->
-    <div class="modal fade" id="pairingModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-mobile-alt me-2"></i>Pair WhatsApp Number
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" id="pairingNumber" 
-                                       placeholder="e.g., 919876543210" required>
-                                <div class="form-text">
-                                    Include country code without + sign
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-primary-custom w-100" onclick="startPairing()">
-                                <i class="fas fa-qrcode me-2"></i>Generate QR Code
-                            </button>
-                        </div>
-                        
-                        <div class="col-md-6 text-center">
-                            <div id="qrContainer" class="mt-3" style="display: none;">
-                                <h6>Scan QR Code with WhatsApp</h6>
-                                <div class="qr-code mt-3">
-                                    <div id="qrcode"></div>
-                                </div>
-                                <div class="mt-3">
-                                    <p class="mb-1">Or use pairing code:</p>
-                                    <h3 id="pairingCodeDisplay" class="text-dark"></h3>
-                                </div>
-                                <div class="mt-3">
-                                    <div class="spinner-border text-dark" role="status">
-                                        <span class="visually-hidden">Waiting for pairing...</span>
+                            <div class="card-body">
+                                <div id="sessionsList">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                                        <p>No active sessions</p>
                                     </div>
-                                    <p class="mt-2">Waiting for WhatsApp pairing...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Send Messages Tab -->
+            <div class="tab-pane fade" id="send" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-cog me-2"></i>Message Settings
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">User ID</label>
+                                    <input type="text" class="form-control" id="sendUserId" placeholder="Enter your user ID">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Select Session</label>
+                                    <select class="form-select" id="sessionSelect">
+                                        <option value="">-- Select Session --</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Target Type</label>
+                                    <select class="form-select" id="targetType" onchange="toggleTargetInput()">
+                                        <option value="individual">Individual Number</option>
+                                        <option value="group">Group</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="individualTargetDiv">
+                                    <label class="form-label">Target Number</label>
+                                    <input type="text" class="form-control" id="targetNumber" placeholder="e.g., 919876543210">
+                                </div>
+                                <div class="mb-3" id="groupTargetDiv" style="display: none;">
+                                    <label class="form-label">Select Group</label>
+                                    <div class="group-list" id="groupsList">
+                                        <div class="text-center text-muted">
+                                            <p>Select a session first to load groups</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Message Prefix (Optional)</label>
+                                    <input type="text" class="form-control" id="messagePrefix" placeholder="e.g., Hello,">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Delay Between Messages (seconds)</label>
+                                    <input type="number" class="form-control" id="delaySeconds" value="2" min="1" max="60">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Messages File</label>
+                                    <input type="file" class="form-control" id="messageFile" accept=".txt">
+                                    <div class="form-text">Upload a .txt file with one message per line</div>
+                                </div>
+                                <button class="btn btn-success w-100" onclick="startSending()" id="sendButton">
+                                    <i class="fas fa-paper-plane me-2"></i>Start Sending
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-info-circle me-2"></i>Message Preview & Status
+                            </div>
+                            <div class="card-body">
+                                <div id="filePreview" class="mb-3">
+                                    <p class="text-muted">No file selected</p>
+                                </div>
+                                <div id="sendStatus"></div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-terminal me-2"></i>Quick Stop Command
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning">
+                                    <strong>Note:</strong> If the stop button doesn't work, use this command in terminal:
+                                </div>
+                                <code id="stopCommand" class="bg-light p-2 rounded d-block">
+                                    curl -X POST http://localhost:21129/stop-task -d "taskId=TASK_ID&userId=USER_ID"
+                                </code>
+                                <div class="mt-2">
+                                    <small class="text-muted">Replace TASK_ID with actual task ID and USER_ID with your user ID</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Tab -->
+            <div class="tab-pane fade" id="tasks" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-tasks me-2"></i>Active Tasks</span>
+                                <button class="refresh-btn" onclick="loadUserTasks()" title="Refresh">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="tasksList">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-tasks fa-3x mb-3"></i>
+                                        <p>No active tasks</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -832,341 +405,423 @@
         </div>
     </div>
 
-    <!-- Task Progress Modal -->
-    <div class="modal fade" id="taskProgressModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-paper-plane me-2"></i>Sending Messages
-                    </h5>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mb-3">
-                        <h4 id="taskProgressText">0%</h4>
-                        <div class="progress" style="height: 20px;">
-                            <div id="taskProgressBar" class="progress-bar progress-bar-custom" 
-                                 style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <small>Sent: <span id="sentCount">0</span></small>
-                        </div>
-                        <div class="col-6">
-                            <small>Total: <span id="totalCount">0</span></small>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-danger-custom" onclick="stopCurrentTask()">
-                            <i class="fas fa-stop me-2"></i>Stop Sending
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 WhatsApp Bulk Message Sender | Multi-User System</p>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script>
         // Global variables
+        let currentSessionId = null;
         let currentUserId = null;
-        let currentTaskId = null;
-        let taskCheckInterval = null;
 
-        // Initialize when page loads
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            initializeUser();
-            loadSessions();
-            updateStats();
+            // Set user ID from input or generate random
+            const userIdInput = document.getElementById('userId');
+            const sendUserIdInput = document.getElementById('sendUserId');
             
-            // Load saved background
-            const savedBg = localStorage.getItem('whatsapp_bg_url');
-            const savedDarkness = localStorage.getItem('whatsapp_bg_darkness') || '0.6';
-            
-            if (savedBg) {
-                document.body.style.background = `linear-gradient(rgba(0, 0, 0, ${savedDarkness}), rgba(0, 0, 0, ${savedDarkness})), url('${savedBg}')`;
-                document.getElementById('backgroundUrl').value = savedBg;
-                document.getElementById('backgroundDarkness').value = savedDarkness;
-            } else {
-                // Set the default background to your image
-                localStorage.setItem('whatsapp_bg_url', 'https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg');
-                localStorage.setItem('whatsapp_bg_darkness', '0.6');
+            if (!userIdInput.value) {
+                const randomUserId = 'user_' + Math.floor(1000 + Math.random() * 9000);
+                userIdInput.value = randomUserId;
             }
+            
+            sendUserIdInput.value = userIdInput.value;
+            currentUserId = userIdInput.value;
+            document.getElementById('currentUser').textContent = currentUserId;
+            
+            loadUserStats();
+            loadUserSessions();
         });
 
-        // Background functions
-        function applyBackground() {
-            const url = document.getElementById('backgroundUrl').value;
-            const darkness = document.getElementById('backgroundDarkness').value;
+        // Update user ID across all inputs
+        document.getElementById('userId').addEventListener('change', function() {
+            const userId = this.value;
+            document.getElementById('sendUserId').value = userId;
+            document.getElementById('currentUser').textContent = userId;
+            currentUserId = userId;
+            loadUserStats();
+            loadUserSessions();
+        });
+
+        // Pair new number
+        async function pairNumber() {
+            const userId = document.getElementById('userId').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
             
-            if (url) {
-                document.body.style.background = `linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})), url('${url}')`;
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center';
-                document.body.style.backgroundAttachment = 'fixed';
-                
-                // Save to localStorage
-                localStorage.setItem('whatsapp_bg_url', url);
-                localStorage.setItem('whatsapp_bg_darkness', darkness);
-                
-                showAlert('Background updated successfully!', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('backgroundModal')).hide();
-            } else {
-                showAlert('Please enter a valid image URL', 'warning');
+            if (!userId || !phoneNumber) {
+                alert('Please enter both User ID and Phone Number');
+                return;
             }
-        }
 
-        function setDefaultBackground() {
-            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            document.body.style.backgroundAttachment = 'fixed';
-            localStorage.removeItem('whatsapp_bg_url');
-            localStorage.removeItem('whatsapp_bg_darkness');
-            showAlert('Default background applied!', 'success');
-        }
+            document.getElementById('qrCard').style.display = 'block';
+            document.getElementById('pairingStatus').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting pairing code...';
 
-        function setCurrentBackground() {
-            document.getElementById('backgroundUrl').value = 'https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg';
-            applyBackground();
-        }
-
-        // Show alert function
-        function showAlert(message, type = 'success') {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertId = 'alert-' + Date.now();
-            
-            const alertHTML = `
-                <div id="${alertId}" class="floating-alert alert alert-${type} alert-dismissible fade show" role="alert">
-                    <strong>${type === 'success' ? '✅' : '❌'} ${message}</strong>
-                    <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
-                </div>
-            `;
-            
-            alertContainer.innerHTML = alertHTML;
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                const alertElement = document.getElementById(alertId);
-                if (alertElement) alertElement.remove();
-            }, 5000);
-        }
-
-        // Initialize user
-        async function initializeUser() {
             try {
-                // Generate random user ID or get from storage
-                currentUserId = localStorage.getItem('whatsapp_user_id');
-                if (!currentUserId) {
-                    currentUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('whatsapp_user_id', currentUserId);
+                const response = await fetch(`/code?number=${phoneNumber}&userId=${userId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('pairingStatus').innerHTML = 
+                        `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>Error: ${data.error}</div>`;
+                    return;
                 }
-                
-                showAlert('User initialized successfully!', 'success');
+
+                if (data.status === 'already-registered') {
+                    document.getElementById('pairingStatus').innerHTML = 
+                        `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Session already registered and ready to use!</div>`;
+                    document.getElementById('qrContainer').innerHTML = '<div class="alert alert-info">Already Connected</div>';
+                    loadUserSessions();
+                } else if (data.waCode) {
+                    if (data.waCode.length === 8) {
+                        // 8-digit code
+                        document.getElementById('pairingStatus').innerHTML = 
+                            `<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Use this 8-digit code in WhatsApp: <strong>${data.waCode}</strong></div>`;
+                        document.getElementById('qrContainer').innerHTML = `
+                            <div style="font-size: 2rem; font-weight: bold; letter-spacing: 5px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                                ${data.waCode}
+                            </div>
+                        `;
+                    } else {
+                        // QR code
+                        document.getElementById('pairingStatus').innerHTML = 
+                            `<div class="alert alert-info"><i class="fas fa-qrcode me-2"></i>Scan the QR code with WhatsApp</div>`;
+                        generateQRCode(data.waCode);
+                    }
+                    
+                    currentSessionId = data.sessionId;
+                    
+                    // Check connection status periodically
+                    checkConnectionStatus(data.sessionId, userId);
+                }
+
             } catch (error) {
-                showAlert('Failed to initialize user', 'danger');
+                document.getElementById('pairingStatus').innerHTML = 
+                    `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>Error: ${error.message}</div>`;
             }
         }
 
-        // Show section
-        function showSection(sectionName) {
-            // Hide all sections
-            document.getElementById('dashboard-section').style.display = 'none';
-            document.getElementById('sessions-section').style.display = 'none';
-            document.getElementById('send-message-section').style.display = 'none';
+        // Generate QR code
+        function generateQRCode(qrText) {
+            const qrContainer = document.getElementById('qrContainer');
+            qrContainer.innerHTML = '';
             
-            // Show selected section
-            document.getElementById(sectionName + '-section').style.display = 'block';
+            const qr = qrcode(0, 'M');
+            qr.addData(qrText);
+            qr.make();
             
-            // Add animation
-            document.getElementById(sectionName + '-section').classList.add('animate-fade-in');
-            
-            // Load data for section
-            if (sectionName === 'sessions') {
-                loadSessions();
-            } else if (sectionName === 'send-message') {
-                loadSessionsForMessage();
-            }
+            qrContainer.innerHTML = qr.createImgTag(5);
         }
 
-        // Load sessions
-        async function loadSessions() {
+        // Check connection status
+        async function checkConnectionStatus(sessionId, userId) {
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(`/user-sessions?userId=${userId}`);
+                    const data = await response.json();
+                    
+                    const session = data.sessions.find(s => s.sessionId === sessionId);
+                    if (session && session.registered) {
+                        document.getElementById('pairingStatus').innerHTML = 
+                            `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>WhatsApp connected successfully!</div>`;
+                        loadUserSessions();
+                    } else {
+                        checkConnectionStatus(sessionId, userId);
+                    }
+                } catch (error) {
+                    console.error('Error checking connection:', error);
+                }
+            }, 3000);
+        }
+
+        // Hide QR card
+        function hideQR() {
+            document.getElementById('qrCard').style.display = 'none';
+            loadUserSessions();
+        }
+
+        // Load user sessions
+        async function loadUserSessions() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) return;
+
             try {
-                const response = await fetch(`/user-sessions?userId=${currentUserId}`);
+                const response = await fetch(`/user-sessions?userId=${userId}`);
                 const data = await response.json();
                 
                 const sessionsList = document.getElementById('sessionsList');
+                const sessionSelect = document.getElementById('sessionSelect');
                 
-                if (data.sessions && data.sessions.length > 0) {
-                    let sessionsHTML = '';
+                sessionSelect.innerHTML = '<option value="">-- Select Session --</option>';
+                
+                if (data.sessions.length === 0) {
+                    sessionsList.innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                            <p>No active sessions</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let sessionsHTML = '';
+                data.sessions.forEach(session => {
+                    const statusClass = session.registered ? 
+                        (session.isConnecting ? 'status-connecting' : 'status-connected') : 
+                        'status-disconnected';
                     
-                    data.sessions.forEach(session => {
-                        const statusClass = session.registered ? 'status-connected' : 
-                                          session.isConnecting ? 'status-connecting' : 'status-disconnected';
-                        const statusText = session.registered ? 'Connected' : 
-                                         session.isConnecting ? 'Connecting...' : 'Disconnected';
-                        
-                        sessionsHTML += `
-                            <div class="glass-card session-card mb-3">
-                                <div class="row align-items-center">
-                                    <div class="col-md-3">
-                                        <h6>${session.number}</h6>
-                                        <span class="${statusClass}">${statusText}</span>
+                    const statusText = session.registered ? 
+                        (session.isConnecting ? 'Connecting...' : 'Connected') : 
+                        'Disconnected';
+
+                    sessionsHTML += `
+                        <div class="card mb-3 session-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title">${session.number}</h6>
+                                        <p class="card-text">
+                                            <span class="${statusClass}">${statusText}</span>
+                                            ${session.registered ? `• ${session.totalGroups} groups` : ''}
+                                        </p>
+                                        <small class="text-muted">Session ID: ${session.sessionId}</small>
                                     </div>
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Pairing Code</small>
-                                        <div>${session.pairingCode}</div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Groups</small>
-                                        <div>${session.totalGroups} groups</div>
-                                    </div>
-                                    <div class="col-md-3 text-end">
-                                        ${session.registered ? `
-                                            <button class="btn btn-sm btn-primary-custom me-2" onclick="refreshGroups('${session.sessionId}')">
-                                                <i class="fas fa-sync-alt"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger-custom" onclick="deleteSession('${session.sessionId}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        ` : `
-                                            <button class="btn btn-sm btn-primary-custom" onclick="reconnectSession('${session.sessionId}')">
-                                                <i class="fas fa-plug"></i> Reconnect
-                                            </button>
-                                        `}
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshGroups('${session.sessionId}')">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.sessionId}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        `;
-                    });
-                    
-                    sessionsList.innerHTML = sessionsHTML;
-                } else {
-                    sessionsList.innerHTML = `
-                        <div class="text-center text-muted py-5">
-                            <i class="fas fa-mobile-alt fa-3x mb-3"></i>
-                            <h5>No WhatsApp sessions</h5>
-                            <p>Add your first WhatsApp session to get started</p>
-                            <button class="btn btn-primary-custom" onclick="showPairingModal()">
-                                <i class="fas fa-plus me-2"></i>Add First Session
-                            </button>
                         </div>
                     `;
-                }
-                
-                updateStats();
+
+                    // Add to session select dropdown
+                    const option = document.createElement('option');
+                    option.value = session.sessionId;
+                    option.textContent = `${session.number} (${session.totalGroups} groups)`;
+                    sessionSelect.appendChild(option);
+                });
+
+                sessionsList.innerHTML = sessionsHTML;
+                loadUserStats();
+
             } catch (error) {
-                showAlert('Failed to load sessions', 'danger');
+                console.error('Error loading sessions:', error);
             }
         }
 
-        // Show pairing modal
-        function showPairingModal() {
-            const modal = new bootstrap.Modal(document.getElementById('pairingModal'));
-            document.getElementById('qrContainer').style.display = 'none';
-            document.getElementById('pairingNumber').value = '';
-            modal.show();
+        // Refresh groups for a session
+        async function refreshGroups(sessionId) {
+            const userId = document.getElementById('userId').value;
+            
+            try {
+                const response = await fetch('/refresh-groups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `sessionId=${sessionId}&userId=${userId}`
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(`Successfully refreshed ${data.total} groups`);
+                    loadUserSessions();
+                } else {
+                    alert('Error refreshing groups: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error refreshing groups:', error);
+                alert('Error refreshing groups');
+            }
         }
 
-        // Start pairing process
-        async function startPairing() {
-            const phoneNumber = document.getElementById('pairingNumber').value.trim();
+        // Delete session
+        async function deleteSession(sessionId) {
+            const userId = document.getElementById('userId').value;
             
-            if (!phoneNumber) {
-                showAlert('Please enter a phone number', 'warning');
+            if (!confirm('Are you sure you want to delete this session?')) {
                 return;
             }
 
             try {
-                document.getElementById('qrContainer').style.display = 'block';
+                const response = await fetch('/delete-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `sessionId=${sessionId}&userId=${userId}`
+                });
                 
-                const response = await fetch(`/code?number=${phoneNumber}&userId=${currentUserId}`);
                 const data = await response.json();
-                
-                if (data.waCode && data.waCode !== 'ALREADY_CONNECTED') {
-                    // Display QR code
-                    const qrcodeElement = document.getElementById('qrcode');
-                    qrcodeElement.innerHTML = '';
-                    
-                    QRCode.toCanvas(qrcodeElement, data.waCode, {
-                        width: 200,
-                        height: 200,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff"
-                    }, function(error) {
-                        if (error) console.error(error);
-                    });
-                    
-                    document.getElementById('pairingCodeDisplay').textContent = data.pairingCode;
-                    
-                    // Check connection status periodically
-                    const checkInterval = setInterval(async () => {
-                        const statusResponse = await fetch(`/user-sessions?userId=${currentUserId}`);
-                        const statusData = await statusResponse.json();
-                        
-                        const session = statusData.sessions.find(s => s.sessionId === data.sessionId);
-                        if (session && session.registered) {
-                            clearInterval(checkInterval);
-                            showAlert('WhatsApp paired successfully!', 'success');
-                            bootstrap.Modal.getInstance(document.getElementById('pairingModal')).hide();
-                            loadSessions();
-                        }
-                    }, 2000);
-                    
-                    // Stop checking after 2 minutes
-                    setTimeout(() => clearInterval(checkInterval), 120000);
-                    
-                } else if (data.waCode === 'ALREADY_CONNECTED') {
-                    showAlert('This number is already connected!', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('pairingModal')).hide();
-                    loadSessions();
+                if (data.success) {
+                    alert('Session deleted successfully');
+                    loadUserSessions();
                 } else {
-                    showAlert('Failed to generate QR code', 'danger');
+                    alert('Error deleting session: ' + data.error);
                 }
             } catch (error) {
-                showAlert('Pairing failed: ' + error.message, 'danger');
+                console.error('Error deleting session:', error);
+                alert('Error deleting session');
             }
         }
 
-        // Load sessions for message sending
-        async function loadSessionsForMessage() {
-            try {
-                const response = await fetch(`/user-sessions?userId=${currentUserId}`);
-                const data = await response.json();
-                
-                const sessionSelect = document.getElementById('messageSession');
-                sessionSelect.innerHTML = '<option value="">Choose a connected session...</option>';
-                
-                if (data.sessions && data.sessions.length > 0) {
-                    data.sessions.forEach(session => {
-                        if (session.registered) {
-                            sessionSelect.innerHTML += `
-                                <option value="${session.sessionId}">
-                                    ${session.number} (${session.totalGroups} groups)
-                                </option>
-                            `;
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to load sessions:', error);
+        // Toggle target input based on type
+        function toggleTargetInput() {
+            const targetType = document.getElementById('targetType').value;
+            const individualDiv = document.getElementById('individualTargetDiv');
+            const groupDiv = document.getElementById('groupTargetDiv');
+            
+            if (targetType === 'individual') {
+                individualDiv.style.display = 'block';
+                groupDiv.style.display = 'none';
+            } else {
+                individualDiv.style.display = 'none';
+                groupDiv.style.display = 'block';
+                loadGroupsForSession();
             }
         }
+
+        // Load groups when session is selected
+        document.getElementById('sessionSelect').addEventListener('change', function() {
+            loadGroupsForSession();
+        });
+
+        // Load groups for selected session
+        async function loadGroupsForSession() {
+            const sessionId = document.getElementById('sessionSelect').value;
+            const userId = document.getElementById('sendUserId').value;
+            const groupsList = document.getElementById('groupsList');
+            
+            if (!sessionId) {
+                groupsList.innerHTML = '<div class="text-center text-muted"><p>Select a session first</p></div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/groups?sessionId=${sessionId}&userId=${userId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    groupsList.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+
+                if (data.groups.length === 0) {
+                    groupsList.innerHTML = '<div class="text-center text-muted"><p>No groups found</p></div>';
+                    return;
+                }
+
+                let groupsHTML = '';
+                data.groups.forEach(group => {
+                    groupsHTML += `
+                        <div class="group-item" onclick="selectGroup(this, '${group.id}')">
+                            <strong>${group.name}</strong>
+                            <br>
+                            <small class="text-muted">${group.participants} participants</small>
+                        </div>
+                    `;
+                });
+
+                groupsList.innerHTML = groupsHTML;
+
+            } catch (error) {
+                console.error('Error loading groups:', error);
+                groupsList.innerHTML = '<div class="alert alert-danger">Error loading groups</div>';
+            }
+        }
+
+        // Select group
+        function selectGroup(element, groupId) {
+            // Remove selected class from all groups
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked group
+            element.classList.add('selected');
+            
+            // Store selected group ID
+            element.dataset.groupId = groupId;
+        }
+
+        // Preview file content
+        document.getElementById('messageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('filePreview');
+            
+            if (!file) {
+                preview.innerHTML = '<p class="text-muted">No file selected</p>';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const messages = content.split('\n').filter(msg => msg.trim());
+                
+                preview.innerHTML = `
+                    <h6>File Preview (${messages.length} messages):</h6>
+                    <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        ${messages.map((msg, index) => `
+                            <div class="mb-1">
+                                <small class="text-muted">${index + 1}.</small> ${msg.substring(0, 100)}${msg.length > 100 ? '...' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            };
+            reader.readAsText(file);
+        });
 
         // Start sending messages
-        async function startSendingMessages() {
-            const sessionId = document.getElementById('messageSession').value;
-            const target = document.getElementById('target').value;
+        async function startSending() {
+            const userId = document.getElementById('sendUserId').value;
+            const sessionId = document.getElementById('sessionSelect').value;
             const targetType = document.getElementById('targetType').value;
-            const delaySec = document.getElementById('delaySec').value;
-            const prefix = document.getElementById('prefix').value;
+            const delaySec = document.getElementById('delaySeconds').value;
+            const prefix = document.getElementById('messagePrefix').value;
             const fileInput = document.getElementById('messageFile');
             
-            if (!sessionId || !target || !fileInput.files[0]) {
-                showAlert('Please fill all required fields', 'warning');
+            let target = '';
+            let groupId = '';
+
+            if (targetType === 'individual') {
+                target = document.getElementById('targetNumber').value;
+                if (!target) {
+                    alert('Please enter target number');
+                    return;
+                }
+            } else {
+                const selectedGroup = document.querySelector('.group-item.selected');
+                if (!selectedGroup) {
+                    alert('Please select a group');
+                    return;
+                }
+                groupId = selectedGroup.dataset.groupId;
+                target = groupId; // Fallback
+            }
+
+            if (!sessionId) {
+                alert('Please select a session');
                 return;
             }
+
+            if (!fileInput.files[0]) {
+                alert('Please select a messages file');
+                return;
+            }
+
+            const sendButton = document.getElementById('sendButton');
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
 
             const formData = new FormData();
             formData.append('sessionId', sessionId);
@@ -1174,7 +829,8 @@
             formData.append('targetType', targetType);
             formData.append('delaySec', delaySec);
             formData.append('prefix', prefix);
-            formData.append('userId', currentUserId);
+            formData.append('userId', userId);
+            formData.append('groupId', groupId);
             formData.append('messageFile', fileInput.files[0]);
 
             try {
@@ -1182,200 +838,173 @@
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentTaskId = data.taskId;
-                    showTaskProgressModal();
-                    startTaskMonitoring();
-                    showAlert('Message sending started!', 'success');
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Task Started!</strong><br>
+                            Task ID: <code>${data.taskId}</code><br>
+                            Total Messages: ${data.totalMessages}<br>
+                            <button class="btn btn-sm btn-warning mt-2" onclick="stopTask('${data.taskId}')">
+                                <i class="fas fa-stop me-1"></i>Stop Task
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Update stop command
+                    document.getElementById('stopCommand').textContent = 
+                        `curl -X POST http://localhost:21129/stop-task -d "taskId=${data.taskId}&userId=${userId}"`;
+                    
+                    // Switch to tasks tab
+                    const tasksTab = new bootstrap.Tab(document.getElementById('tasks-tab'));
+                    tasksTab.show();
+                    
+                    loadUserTasks();
                 } else {
-                    showAlert('Failed to start sending: ' + data.error, 'danger');
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            Error: ${data.error}
+                        </div>
+                    `;
                 }
+
             } catch (error) {
-                showAlert('Failed to start sending: ' + error.message, 'danger');
+                document.getElementById('sendStatus').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Start Sending';
             }
         }
 
-        // Show task progress modal
-        function showTaskProgressModal() {
-            const modal = new bootstrap.Modal(document.getElementById('taskProgressModal'));
-            modal.show();
+        // Stop task
+        async function stopTask(taskId) {
+            const userId = document.getElementById('sendUserId').value;
+            
+            try {
+                const response = await fetch('/stop-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `taskId=${taskId}&userId=${userId}`
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Task stopped successfully');
+                    loadUserTasks();
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Task stopped. Sent ${data.sentMessages}/${data.totalMessages} messages.
+                        </div>
+                    `;
+                } else {
+                    alert('Error stopping task: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error stopping task:', error);
+                alert('Error stopping task');
+            }
         }
 
-        // Start task monitoring
-        function startTaskMonitoring() {
-            taskCheckInterval = setInterval(async () => {
-                if (!currentTaskId) {
-                    clearInterval(taskCheckInterval);
+        // Load user tasks
+        async function loadUserTasks() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`/user-tasks?userId=${userId}`);
+                const data = await response.json();
+                
+                const tasksList = document.getElementById('tasksList');
+                
+                if (data.tasks.length === 0) {
+                    tasksList.innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="fas fa-tasks fa-3x mb-3"></i>
+                            <p>No active tasks</p>
+                        </div>
+                    `;
                     return;
                 }
-                
-                try {
-                    const response = await fetch(`/task-status?taskId=${currentTaskId}&userId=${currentUserId}`);
-                    const data = await response.json();
-                    
-                    if (data.status === 'completed' || data.status === 'stopped') {
-                        clearInterval(taskCheckInterval);
-                        document.getElementById('taskProgressText').textContent = '100%';
-                        document.getElementById('taskProgressBar').style.width = '100%';
-                        
-                        setTimeout(() => {
-                            bootstrap.Modal.getInstance(document.getElementById('taskProgressModal')).hide();
-                            showAlert(`Task completed! Sent ${data.sentMessages}/${data.totalMessages} messages`, 'success');
-                            updateStats();
-                        }, 1000);
-                    } else {
-                        const progress = Math.round((data.sentMessages / data.totalMessages) * 100);
-                        document.getElementById('taskProgressText').textContent = progress + '%';
-                        document.getElementById('taskProgressBar').style.width = progress + '%';
-                        document.getElementById('sentCount').textContent = data.sentMessages;
-                        document.getElementById('totalCount').textContent = data.totalMessages;
-                    }
-                } catch (error) {
-                    console.error('Failed to check task status:', error);
-                }
-            }, 1000);
-        }
 
-        // Stop current task
-        async function stopCurrentTask() {
-            if (!currentTaskId) return;
-            
-            try {
-                const response = await fetch('/stop-task', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `taskId=${currentTaskId}&userId=${currentUserId}`
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showAlert('Task stopped successfully', 'warning');
-                    clearInterval(taskCheckInterval);
-                    bootstrap.Modal.getInstance(document.getElementById('taskProgressModal')).hide();
-                    updateStats();
-                }
-            } catch (error) {
-                showAlert('Failed to stop task', 'danger');
-            }
-        }
-
-        // Update stats
-        async function updateStats() {
-            try {
-                const response = await fetch(`/user-stats?userId=${currentUserId}`);
-                const data = await response.json();
-                
-                if (data.stats) {
-                    document.getElementById('totalSessions').textContent = data.stats.activeSessions;
-                    document.getElementById('totalMessages').textContent = data.stats.totalMessagesSent;
-                    document.getElementById('activeTasks').textContent = data.stats.activeTasks;
+                let tasksHTML = '';
+                data.tasks.forEach(task => {
+                    const statusClass = task.isSending ? 'status-connecting' : 'status-connected';
+                    const statusText = task.isSending ? 'Sending...' : 'Completed';
                     
-                    // Load active tasks
-                    const tasksResponse = await fetch(`/user-tasks?userId=${currentUserId}`);
-                    const tasksData = await tasksResponse.json();
-                    
-                    const activeTasksList = document.getElementById('activeTasksList');
-                    if (tasksData.tasks && tasksData.tasks.length > 0) {
-                        let tasksHTML = '';
-                        tasksData.tasks.forEach(task => {
-                            if (task.isSending) {
-                                tasksHTML += `
-                                    <div class="glass-card task-card mb-2">
-                                        <div class="row align-items-center">
-                                            <div class="col-6">
-                                                <small>Task: ${task.taskId}</small>
-                                                <div>Progress: ${task.progress}%</div>
-                                            </div>
-                                            <div class="col-6 text-end">
-                                                <button class="btn btn-sm btn-danger-custom" onclick="stopTask('${task.taskId}')">
-                                                    <i class="fas fa-stop"></i> Stop
-                                                </button>
+                    tasksHTML += `
+                        <div class="card mb-3 task-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="card-title">Task: ${task.taskId}</h6>
+                                        <p class="card-text">
+                                            <span class="${statusClass}">${statusText}</span> • 
+                                            Progress: ${task.sentMessages}/${task.totalMessages} messages
+                                        </p>
+                                        <div class="progress" style="width: 200px;">
+                                            <div class="progress-bar" role="progressbar" style="width: ${task.progress}%;" 
+                                                 aria-valuenow="${task.progress}" aria-valuemin="0" aria-valuemax="100">
+                                                ${task.progress}%
                                             </div>
                                         </div>
+                                        <small class="text-muted">Started: ${new Date(task.startTime).toLocaleString()}</small>
                                     </div>
-                                `;
-                            }
-                        });
-                        activeTasksList.innerHTML = tasksHTML;
-                    } else {
-                        activeTasksList.innerHTML = `
-                            <div class="text-center text-muted">
-                                <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                <p>No active tasks</p>
+                                    ${task.isSending ? `
+                                        <button class="btn btn-sm btn-warning" onclick="stopTask('${task.taskId}')">
+                                            <i class="fas fa-stop me-1"></i>Stop
+                                        </button>
+                                    ` : ''}
+                                </div>
                             </div>
-                        `;
-                    }
-                }
+                        </div>
+                    `;
+                });
+
+                tasksList.innerHTML = tasksHTML;
+                loadUserStats();
+
             } catch (error) {
-                console.error('Failed to update stats:', error);
+                console.error('Error loading tasks:', error);
             }
         }
 
-        // Stop specific task
-        async function stopTask(taskId) {
+        // Load user stats
+        async function loadUserStats() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) return;
+
             try {
-                const response = await fetch('/stop-task', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `taskId=${taskId}&userId=${currentUserId}`
-                });
-                
+                const response = await fetch(`/user-stats?userId=${userId}`);
                 const data = await response.json();
                 
-                if (data.success) {
-                    showAlert('Task stopped successfully', 'warning');
-                    updateStats();
-                }
+                document.getElementById('totalSessions').textContent = data.stats.activeSessions;
+                document.getElementById('activeTasks').textContent = data.stats.activeTasks;
+                document.getElementById('totalMessages').textContent = data.stats.totalMessagesSent;
+                document.getElementById('userSince').textContent = new Date(data.stats.userSince).toLocaleDateString();
+
             } catch (error) {
-                showAlert('Failed to stop task', 'danger');
+                console.error('Error loading stats:', error);
             }
         }
 
-        // Delete session
-        async function deleteSession(sessionId) {
-            if (!confirm('Are you sure you want to delete this session?')) return;
-            
-            try {
-                const response = await fetch('/delete-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `sessionId=${sessionId}&userId=${currentUserId}`
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showAlert('Session deleted successfully', 'success');
-                    loadSessions();
-                }
-            } catch (error) {
-                showAlert('Failed to delete session', 'danger');
+        // Auto-refresh tasks every 10 seconds
+        setInterval(() => {
+            if (document.getElementById('tasks-tab').classList.contains('active')) {
+                loadUserTasks();
             }
-        }
-
-        // Message file preview
-        document.getElementById('messageFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const content = e.target.result;
-                    const lines = content.split('\n').slice(0, 5); // Show first 5 lines
-                    document.getElementById('messagePreview').value = lines.join('\n');
-                };
-                reader.readAsText(file);
-            }
-        });
+        }, 10000);
     </script>
 </body>
 </html>
