@@ -3,153 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bulk Message Sender</title>
+    <title>AAHAN WP SERVER - WhatsApp Bulk Sender</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary: #25D366;
+            --secondary: #128C7E;
+            --dark: #075E54;
+            --light: #DCF8C6;
+            --accent: #34B7F1;
+        }
+        
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--dark) 0%, var(--secondary) 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
         }
+        
         .navbar-brand {
             font-weight: bold;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            color: white !important;
         }
+        
+        .logo-text {
+            background: linear-gradient(45deg, #25D366, #128C7E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        
         .card {
             border: none;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             margin-bottom: 20px;
             transition: transform 0.3s ease;
+            background: rgba(255,255,255,0.95);
         }
+        
         .card:hover {
             transform: translateY(-5px);
         }
+        
         .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--dark) 100%);
             color: white;
             border-radius: 15px 15px 0 0 !important;
             font-weight: 600;
+            font-size: 1.1rem;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        
+        .btn-whatsapp {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
+            border-radius: 10px;
+            padding: 12px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
+        
+        .btn-whatsapp:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+        }
+        
         .btn-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
+            padding: 12px 25px;
         }
+        
         .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
         }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #FFD93D 0%, #FF9A3D 100%);
+            border: none;
+            border-radius: 10px;
+            color: #333;
+        }
+        
+        .status-connected {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .status-disconnected {
+            color: #FF6B6B;
+            font-weight: bold;
+        }
+        
+        .status-connecting {
+            color: #FFD93D;
+            font-weight: bold;
+        }
+        
         .qr-code {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
-            margin: 10px 0;
+            margin: 15px 0;
+            border: 3px solid var(--light);
         }
-        .status-connected {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .status-disconnected {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .status-connecting {
-            color: #ffc107;
-            font-weight: bold;
-        }
-        .session-card {
-            border-left: 4px solid #667eea;
-        }
-        .task-card {
-            border-left: 4px solid #56ab2f;
-        }
-        .progress {
-            height: 10px;
-            border-radius: 5px;
-        }
+        
         .user-stats {
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, #25D366 100%);
             color: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+        
         .stat-number {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
+        
         .stat-label {
             font-size: 0.9rem;
             opacity: 0.9;
+            font-weight: 500;
         }
+        
+        .nav-tabs {
+            border-bottom: 3px solid var(--light);
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--dark);
+            font-weight: 600;
+            border: none;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+            padding: 12px 25px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+        }
+        
         .tab-content {
             background: white;
             border-radius: 0 0 15px 15px;
-            padding: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-        .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px 8px 0 0;
-        }
-        .nav-tabs .nav-link {
-            color: #667eea;
-            font-weight: 500;
-        }
+        
         .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            padding: 10px 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
         }
+        
         .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.25);
         }
-        .logo {
+        
+        .refresh-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
             width: 40px;
             height: 40px;
-            margin-right: 10px;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
             color: white;
-            margin-top: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
         }
-        .refresh-btn {
-            background: none;
-            border: none;
-            color: #667eea;
-            cursor: pointer;
-            font-size: 1.2rem;
+        
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+            background: var(--secondary);
         }
-        .group-list {
-            max-height: 300px;
-            overflow-y: auto;
+        
+        .session-card {
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s ease;
         }
+        
+        .session-card:hover {
+            border-left-color: var(--accent);
+        }
+        
+        .task-card {
+            border-left: 5px solid var(--accent);
+        }
+        
+        .progress {
+            height: 12px;
+            border-radius: 10px;
+            background: #e9ecef;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 10px;
+        }
+        
         .group-item {
-            padding: 10px;
+            padding: 12px 15px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin-bottom: 5px;
         }
+        
         .group-item:hover {
-            background-color: #f8f9fa;
+            background-color: var(--light);
+            transform: translateX(5px);
         }
+        
         .group-item.selected {
-            background-color: #e3f2fd;
-            border-left: 3px solid #2196f3;
+            background-color: var(--light);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: white;
+            margin-top: 40px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+        
+        .feature-text h5 {
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .feature-text p {
+            margin-bottom: 0;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -158,8 +285,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjQ3MiAxNC4wODVDMTcuMDE2IDE0LjA4NSAxNi41OTYgMTQuMjU2IDE2LjI3MiAxNC41NTZDMTUuNjMyIDE1LjE2IDE0Ljk2OCAxNS43NTIgMTQuMjg4IDE2LjMyOEMxMy44NzIgMTYuNjY0IDEzLjM0OCAxNi44NDggMTIuODA4IDE2Ljg0OEMxMi4yNjggMTYuODQ4IDExLjc0NCAxNi42NjQgMTEuMzI4IDE2LjMyOEMxMC42NDggMTUuNzUyIDkuOTg0IDE1LjE2IDkuMzQ0IDE0LjU1NkM5LjAyIDE0LjI1NiA4LjYgMTQuMDg1IDguMTQ0IDE0LjA4NUM3LjY4OCAxNC4wODUgNy4yNjggMTQuMjU2IDYuOTQ0IDE0LjU1NkM2LjMwNCAxNS4xNiA1LjY0IDE1Ljc1MiA0Ljk2IDE2LjMyOEM0LjU0NCAxNi42NjQgNC4wMiAxNi44NDggMy40OCAxNi44NDhDMy4yMiAxNi44NDggMi45NjggMTYuNzkyIDIuNzMyIDE2LjY4QzIuNDk2IDE2LjU2OCAyLjI4OCAxNi40MDQgMi4xMiAxNi4yQzEuOTUyIDE1Ljk5NiAxLjgyOCAxNS43NTIgMS43NTIgMTUuNDhDNS4wNTYgNi42MTYgMTEuMzI4IDIuMTYgMTcuNDcyIDIuMTZDMTcuNzMyIDIuMTYgMTcuOTg0IDIuMjA4IDE4LjIyIDIuMzJDMTguNDU2IDIuNDMyIDE4LjY2NCAyLjU5NiAxOC44MzIgMi44QzE5LjAwOCAzLjAwNCAxOS4xMzIgMy4yNDggMTkuMjA4IDMuNTJDMTkuNjE2IDUuMDY0IDE5LjgyNCA2LjY0OCAxOS44MjQgOC4yNTZDMTkuODI0IDkuODY0IDE5LjYxNiAxMS40NDggMTkuMjA4IDEyLjk5MkMxOS4xMzIgMTMuMjY0IDE5LjAwOCAxMy41MDggMTguODMyIDEzLjcxMkMxOC42NjQgMTMuOTE2IDE4LjQ1NiAxNC4wOCAxOC4yMiAxNC4xOTJDMTcuOTg0IDE0LjMwNCAxNy43MzIgMTQuMzUyIDE3LjQ3MiAxNC4zNTJWMTQuMDg1WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+" class="logo" alt="WhatsApp">
-                WhatsApp Bulk Sender
+                <i class="fab fa-whatsapp me-2"></i>
+                <span class="logo-text">AAHAN WP SERVER</span>
             </a>
             <div class="navbar-nav ms-auto">
                 <div class="nav-item">
@@ -176,21 +303,58 @@
         <!-- User Stats -->
         <div class="user-stats">
             <div class="row text-center">
-                <div class="col-md-3">
+                <div class="col-md-3 col-6 mb-3">
                     <h3 class="stat-number" id="totalSessions">0</h3>
-                    <div class="stat-label">Connected Sessions</div>
+                    <div class="stat-label"><i class="fas fa-mobile-alt me-1"></i>Connected Sessions</div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 col-6 mb-3">
                     <h3 class="stat-number" id="activeTasks">0</h3>
-                    <div class="stat-label">Active Tasks</div>
+                    <div class="stat-label"><i class="fas fa-tasks me-1"></i>Active Tasks</div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 col-6 mb-3">
                     <h3 class="stat-number" id="totalMessages">0</h3>
-                    <div class="stat-label">Messages Sent</div>
+                    <div class="stat-label"><i class="fas fa-paper-plane me-1"></i>Messages Sent</div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 col-6 mb-3">
                     <h3 class="stat-number" id="userSince">-</h3>
-                    <div class="stat-label">User Since</div>
+                    <div class="stat-label"><i class="fas fa-user-clock me-1"></i>User Since</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="d-flex">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Fast & Reliable</h5>
+                        <p>Optimized for high performance with improved uptime</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="d-flex">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Multi-User</h5>
+                        <p>Support for multiple users with separate sessions</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="d-flex">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h5>Secure</h5>
+                        <p>Your data and sessions are protected</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -199,7 +363,7 @@
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
-                    <i class="fas fa-mobile-alt me-2"></i>Sessions
+                    <i class="fas fa-mobile-alt me-2"></i>WhatsApp Sessions
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -209,7 +373,7 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
-                    <i class="fas fa-tasks me-2"></i>Tasks
+                    <i class="fas fa-tasks me-2"></i>Message Tasks
                 </button>
             </li>
         </ul>
@@ -221,47 +385,59 @@
                     <div class="col-md-6">
                         <div class="card session-card">
                             <div class="card-header">
-                                <i class="fas fa-plus-circle me-2"></i>Pair New Number
+                                <i class="fas fa-qrcode me-2"></i>Connect WhatsApp Number
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <label class="form-label">User ID</label>
-                                    <input type="text" class="form-control" id="userId" placeholder="Enter your user ID" value="user_<?php echo rand(1000, 9999); ?>">
-                                    <div class="form-text">This ID will be used to manage your sessions</div>
+                                    <label class="form-label">Your User ID</label>
+                                    <input type="text" class="form-control" id="userId" placeholder="Enter your unique user ID" value="user_${Math.floor(1000 + Math.random() * 9000)}">
+                                    <div class="form-text">This ID helps us manage your sessions securely</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">WhatsApp Number</label>
                                     <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 919876543210">
-                                    <div class="form-text">Enter number with country code (without +)</div>
+                                    <div class="form-text">Enter number with country code (without + sign)</div>
                                 </div>
-                                <button class="btn btn-primary w-100" onclick="pairNumber()">
-                                    <i class="fas fa-qrcode me-2"></i>Get Pairing Code
+                                <button class="btn btn-whatsapp w-100" onclick="pairNumber()" id="pairButton">
+                                    <i class="fas fa-link me-2"></i>Connect WhatsApp
                                 </button>
                             </div>
                         </div>
 
                         <div class="card" id="qrCard" style="display: none;">
                             <div class="card-header">
-                                <i class="fas fa-qrcode me-2"></i>Pairing Code
+                                <i class="fas fa-qrcode me-2"></i>WhatsApp Pairing
                             </div>
                             <div class="card-body text-center">
                                 <div id="pairingStatus" class="alert alert-info">
-                                    Getting pairing code...
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Generating pairing code...
                                 </div>
                                 <div class="qr-code" id="qrContainer">
                                     <!-- QR code will appear here -->
                                 </div>
-                                <div id="pairingInstructions" class="mt-3">
-                                    <p><strong>Instructions:</strong></p>
-                                    <ol class="text-start">
-                                        <li>Open WhatsApp on your phone</li>
-                                        <li>Go to Settings → Linked Devices</li>
-                                        <li>Tap on "Link a Device"</li>
-                                        <li>Scan the QR code above or enter the 8-digit code</li>
-                                    </ol>
+                                <div class="mt-3">
+                                    <p class="fw-bold">How to connect:</p>
+                                    <div class="text-start">
+                                        <div class="d-flex mb-2">
+                                            <div class="me-3"><i class="fas fa-mobile-alt text-success"></i></div>
+                                            <div>Open WhatsApp on your phone</div>
+                                        </div>
+                                        <div class="d-flex mb-2">
+                                            <div class="me-3"><i class="fas fa-cog text-success"></i></div>
+                                            <div>Go to Settings → Linked Devices</div>
+                                        </div>
+                                        <div class="d-flex mb-2">
+                                            <div class="me-3"><i class="fas fa-link text-success"></i></div>
+                                            <div>Tap on "Link a Device"</div>
+                                        </div>
+                                        <div class="d-flex">
+                                            <div class="me-3"><i class="fas fa-qrcode text-success"></i></div>
+                                            <div>Scan the QR code above</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button class="btn btn-secondary mt-2" onclick="hideQR()">
-                                    <i class="fas fa-times me-2"></i>Close
+                                <button class="btn btn-secondary mt-3" onclick="hideQR()">
+                                    <i class="fas fa-times me-2"></i>Cancel
                                 </button>
                             </div>
                         </div>
@@ -270,16 +446,17 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-list me-2"></i>Active Sessions</span>
-                                <button class="refresh-btn" onclick="loadUserSessions()" title="Refresh">
+                                <span><i class="fas fa-list me-2"></i>Your Active Sessions</span>
+                                <button class="refresh-btn" onclick="loadUserSessions()" title="Refresh Sessions">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
                             <div class="card-body">
                                 <div id="sessionsList">
-                                    <div class="text-center text-muted">
-                                        <i class="fas fa-mobile-alt fa-3x mb-3"></i>
-                                        <p>No active sessions</p>
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-mobile-alt fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
+                                        <p>No WhatsApp sessions connected yet</p>
+                                        <small class="text-muted">Connect your first WhatsApp account to get started</small>
                                     </div>
                                 </div>
                             </div>
@@ -294,34 +471,35 @@
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-header">
-                                <i class="fas fa-cog me-2"></i>Message Settings
+                                <i class="fas fa-cogs me-2"></i>Message Settings
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <label class="form-label">User ID</label>
+                                    <label class="form-label">Your User ID</label>
                                     <input type="text" class="form-control" id="sendUserId" placeholder="Enter your user ID">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Select Session</label>
+                                    <label class="form-label">Select WhatsApp Session</label>
                                     <select class="form-select" id="sessionSelect">
                                         <option value="">-- Select Session --</option>
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Target Type</label>
+                                    <label class="form-label">Send To</label>
                                     <select class="form-select" id="targetType" onchange="toggleTargetInput()">
                                         <option value="individual">Individual Number</option>
-                                        <option value="group">Group</option>
+                                        <option value="group">WhatsApp Group</option>
                                     </select>
                                 </div>
                                 <div class="mb-3" id="individualTargetDiv">
-                                    <label class="form-label">Target Number</label>
+                                    <label class="form-label">Phone Number</label>
                                     <input type="text" class="form-control" id="targetNumber" placeholder="e.g., 919876543210">
                                 </div>
                                 <div class="mb-3" id="groupTargetDiv" style="display: none;">
                                     <label class="form-label">Select Group</label>
-                                    <div class="group-list" id="groupsList">
-                                        <div class="text-center text-muted">
+                                    <div class="group-list" id="groupsList" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fas fa-users fa-2x mb-2"></i>
                                             <p>Select a session first to load groups</p>
                                         </div>
                                     </div>
@@ -333,6 +511,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Delay Between Messages (seconds)</label>
                                     <input type="number" class="form-control" id="delaySeconds" value="2" min="1" max="60">
+                                    <div class="form-text">Recommended: 2-5 seconds to avoid rate limits</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Messages File</label>
@@ -340,7 +519,7 @@
                                     <div class="form-text">Upload a .txt file with one message per line</div>
                                 </div>
                                 <button class="btn btn-success w-100" onclick="startSending()" id="sendButton">
-                                    <i class="fas fa-paper-plane me-2"></i>Start Sending
+                                    <i class="fas fa-paper-plane me-2"></i>Start Sending Messages
                                 </button>
                             </div>
                         </div>
@@ -349,25 +528,42 @@
                     <div class="col-md-8">
                         <div class="card">
                             <div class="card-header">
-                                <i class="fas fa-info-circle me-2"></i>Message Preview & Status
+                                <i class="fas fa-eye me-2"></i>Message Preview
                             </div>
                             <div class="card-body">
-                                <div id="filePreview" class="mb-3">
-                                    <p class="text-muted">No file selected</p>
+                                <div id="filePreview">
+                                    <div class="text-muted text-center py-3">
+                                        <i class="fas fa-file-alt fa-2x mb-2"></i>
+                                        <p>No file selected</p>
+                                        <small>Upload a messages file to see preview</small>
+                                    </div>
                                 </div>
-                                <div id="sendStatus"></div>
                             </div>
                         </div>
 
-                        <div class="card">
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="fas fa-info-circle me-2"></i>Sending Status
+                            </div>
+                            <div class="card-body">
+                                <div id="sendStatus">
+                                    <div class="text-center text-muted py-2">
+                                        <p>Ready to send messages</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
                             <div class="card-header">
                                 <i class="fas fa-terminal me-2"></i>Quick Stop Command
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-warning">
-                                    <strong>Note:</strong> If the stop button doesn't work, use this command in terminal:
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Emergency Stop:</strong> If the stop button doesn't work, use this command:
                                 </div>
-                                <code id="stopCommand" class="bg-light p-2 rounded d-block">
+                                <code id="stopCommand" class="bg-light p-3 rounded d-block">
                                     curl -X POST http://localhost:21129/stop-task -d "taskId=TASK_ID&userId=USER_ID"
                                 </code>
                                 <div class="mt-2">
@@ -385,16 +581,17 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-tasks me-2"></i>Active Tasks</span>
-                                <button class="refresh-btn" onclick="loadUserTasks()" title="Refresh">
+                                <span><i class="fas fa-tasks me-2"></i>Your Message Tasks</span>
+                                <button class="refresh-btn" onclick="loadUserTasks()" title="Refresh Tasks">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
                             <div class="card-body">
                                 <div id="tasksList">
-                                    <div class="text-center text-muted">
-                                        <i class="fas fa-tasks fa-3x mb-3"></i>
-                                        <p>No active tasks</p>
+                                    <div class="text-center text-muted py-5">
+                                        <i class="fas fa-tasks fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
+                                        <p>No active message tasks</p>
+                                        <small class="text-muted">Your message sending tasks will appear here</small>
                                     </div>
                                 </div>
                             </div>
@@ -407,18 +604,18 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>&copy; 2024 WhatsApp Bulk Message Sender | Multi-User System</p>
+        <p>&copy; 2024 AAHAN WP SERVER - WhatsApp Bulk Message Sender</p>
+        <p class="mb-0"><small>Multi-User System with Enhanced Uptime</small></p>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script>
         // Global variables
         let currentSessionId = null;
         let currentUserId = null;
 
-        // Initialize
+        // Initialize application
         document.addEventListener('DOMContentLoaded', function() {
             // Set user ID from input or generate random
             const userIdInput = document.getElementById('userId');
@@ -435,6 +632,9 @@
             
             loadUserStats();
             loadUserSessions();
+            
+            // Auto-refresh sessions every 30 seconds
+            setInterval(loadUserSessions, 30000);
         });
 
         // Update user ID across all inputs
@@ -447,73 +647,80 @@
             loadUserSessions();
         });
 
-        // Pair new number
+        // Pair new WhatsApp number
         async function pairNumber() {
             const userId = document.getElementById('userId').value;
             const phoneNumber = document.getElementById('phoneNumber').value;
             
             if (!userId || !phoneNumber) {
-                alert('Please enter both User ID and Phone Number');
+                showAlert('Please enter both User ID and Phone Number', 'warning');
                 return;
             }
 
             document.getElementById('qrCard').style.display = 'block';
             document.getElementById('pairingStatus').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting pairing code...';
 
+            const pairButton = document.getElementById('pairButton');
+            pairButton.disabled = true;
+            pairButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
+
             try {
                 const response = await fetch(`/code?number=${phoneNumber}&userId=${userId}`);
                 const data = await response.json();
                 
                 if (data.error) {
-                    document.getElementById('pairingStatus').innerHTML = 
-                        `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>Error: ${data.error}</div>`;
+                    showAlert('Error: ' + data.error, 'danger');
+                    pairButton.disabled = false;
+                    pairButton.innerHTML = '<i class="fas fa-link me-2"></i>Connect WhatsApp';
                     return;
                 }
 
                 if (data.status === 'already-registered') {
                     document.getElementById('pairingStatus').innerHTML = 
-                        `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Session already registered and ready to use!</div>`;
-                    document.getElementById('qrContainer').innerHTML = '<div class="alert alert-info">Already Connected</div>';
+                        '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Session already registered and ready to use!</div>';
+                    document.getElementById('qrContainer').innerHTML = '<div class="alert alert-info p-4">Already Connected</div>';
+                    showAlert('WhatsApp session is already connected and ready!', 'success');
                     loadUserSessions();
                 } else if (data.waCode) {
                     if (data.waCode.length === 8) {
                         // 8-digit code
                         document.getElementById('pairingStatus').innerHTML = 
-                            `<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Use this 8-digit code in WhatsApp: <strong>${data.waCode}</strong></div>`;
+                            '<div class="alert alert-info"><i class="fas fa-key me-2"></i>Use this 8-digit code in WhatsApp: <strong>' + data.waCode + '</strong></div>';
                         document.getElementById('qrContainer').innerHTML = `
-                            <div style="font-size: 2rem; font-weight: bold; letter-spacing: 5px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                                ${data.waCode}
+                            <div class="p-4 bg-light rounded">
+                                <div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 8px; color: #25D366;">
+                                    ${data.waCode}
+                                </div>
+                                <small class="text-muted">Enter this code in WhatsApp Linked Devices</small>
                             </div>
                         `;
                     } else {
                         // QR code
                         document.getElementById('pairingStatus').innerHTML = 
-                            `<div class="alert alert-info"><i class="fas fa-qrcode me-2"></i>Scan the QR code with WhatsApp</div>`;
-                        generateQRCode(data.waCode);
+                            '<div class="alert alert-info"><i class="fas fa-qrcode me-2"></i>Scan the QR code with WhatsApp</div>';
+                        document.getElementById('qrContainer').innerHTML = `
+                            <div class="p-4 bg-light rounded">
+                                <div style="font-family: monospace; font-weight: bold; word-break: break-all; font-size: 14px;">
+                                    ${data.waCode}
+                                </div>
+                                <small class="text-muted">Scan this code with WhatsApp</small>
+                            </div>
+                        `;
                     }
                     
                     currentSessionId = data.sessionId;
+                    showAlert('Pairing code received. Please complete the pairing process in WhatsApp.', 'info');
                     
                     // Check connection status periodically
                     checkConnectionStatus(data.sessionId, userId);
                 }
 
             } catch (error) {
-                document.getElementById('pairingStatus').innerHTML = 
-                    `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>Error: ${error.message}</div>`;
+                showAlert('Connection error: ' + error.message, 'danger');
+            } finally {
+                pairButton.disabled = false;
+                pairButton.innerHTML = '<i class="fas fa-link me-2"></i>Connect WhatsApp';
             }
-        }
-
-        // Generate QR code
-        function generateQRCode(qrText) {
-            const qrContainer = document.getElementById('qrContainer');
-            qrContainer.innerHTML = '';
-            
-            const qr = qrcode(0, 'M');
-            qr.addData(qrText);
-            qr.make();
-            
-            qrContainer.innerHTML = qr.createImgTag(5);
         }
 
         // Check connection status
@@ -526,7 +733,8 @@
                     const session = data.sessions.find(s => s.sessionId === sessionId);
                     if (session && session.registered) {
                         document.getElementById('pairingStatus').innerHTML = 
-                            `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>WhatsApp connected successfully!</div>`;
+                            '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>WhatsApp connected successfully!</div>';
+                        showAlert('WhatsApp connected successfully! You can now send messages.', 'success');
                         loadUserSessions();
                     } else {
                         checkConnectionStatus(sessionId, userId);
@@ -559,9 +767,10 @@
                 
                 if (data.sessions.length === 0) {
                     sessionsList.innerHTML = `
-                        <div class="text-center text-muted">
-                            <i class="fas fa-mobile-alt fa-3x mb-3"></i>
-                            <p>No active sessions</p>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-mobile-alt fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
+                            <p>No WhatsApp sessions connected yet</p>
+                            <small class="text-muted">Connect your first WhatsApp account to get started</small>
                         </div>
                     `;
                     return;
@@ -580,20 +789,33 @@
                     sessionsHTML += `
                         <div class="card mb-3 session-card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="card-title">${session.number}</h6>
-                                        <p class="card-text">
-                                            <span class="${statusClass}">${statusText}</span>
-                                            ${session.registered ? `• ${session.totalGroups} groups` : ''}
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title d-flex align-items-center">
+                                            <i class="fab fa-whatsapp me-2 text-success"></i>
+                                            ${session.number}
+                                        </h6>
+                                        <p class="card-text mb-1">
+                                            <span class="${statusClass}">
+                                                <i class="fas fa-circle me-1" style="font-size: 0.7rem;"></i>${statusText}
+                                            </span>
+                                            ${session.registered ? `• ${session.totalGroups} groups available` : ''}
                                         </p>
                                         <small class="text-muted">Session ID: ${session.sessionId}</small>
+                                        ${session.deviceInfo ? `
+                                            <div class="mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Connected: ${new Date(session.deviceInfo.pairedAt).toLocaleString()}
+                                                </small>
+                                            </div>
+                                        ` : ''}
                                     </div>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshGroups('${session.sessionId}')">
+                                    <div class="d-flex">
+                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshGroups('${session.sessionId}')" title="Refresh Groups">
                                             <i class="fas fa-sync-alt"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.sessionId}')">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.sessionId}')" title="Delete Session">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -632,14 +854,14 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert(`Successfully refreshed ${data.total} groups`);
+                    showAlert(`Successfully refreshed ${data.total} groups`, 'success');
                     loadUserSessions();
                 } else {
-                    alert('Error refreshing groups: ' + data.error);
+                    showAlert('Error refreshing groups: ' + data.error, 'danger');
                 }
             } catch (error) {
                 console.error('Error refreshing groups:', error);
-                alert('Error refreshing groups');
+                showAlert('Error refreshing groups', 'danger');
             }
         }
 
@@ -647,7 +869,7 @@
         async function deleteSession(sessionId) {
             const userId = document.getElementById('userId').value;
             
-            if (!confirm('Are you sure you want to delete this session?')) {
+            if (!confirm('Are you sure you want to delete this WhatsApp session? This will disconnect the device.')) {
                 return;
             }
 
@@ -662,14 +884,14 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Session deleted successfully');
+                    showAlert('WhatsApp session deleted successfully', 'success');
                     loadUserSessions();
                 } else {
-                    alert('Error deleting session: ' + data.error);
+                    showAlert('Error deleting session: ' + data.error, 'danger');
                 }
             } catch (error) {
                 console.error('Error deleting session:', error);
-                alert('Error deleting session');
+                showAlert('Error deleting session', 'danger');
             }
         }
 
@@ -701,7 +923,7 @@
             const groupsList = document.getElementById('groupsList');
             
             if (!sessionId) {
-                groupsList.innerHTML = '<div class="text-center text-muted"><p>Select a session first</p></div>';
+                groupsList.innerHTML = '<div class="text-center text-muted py-3"><p>Select a session first</p></div>';
                 return;
             }
 
@@ -715,7 +937,7 @@
                 }
 
                 if (data.groups.length === 0) {
-                    groupsList.innerHTML = '<div class="text-center text-muted"><p>No groups found</p></div>';
+                    groupsList.innerHTML = '<div class="text-center text-muted py-3"><p>No groups found</p></div>';
                     return;
                 }
 
@@ -725,7 +947,7 @@
                         <div class="group-item" onclick="selectGroup(this, '${group.id}')">
                             <strong>${group.name}</strong>
                             <br>
-                            <small class="text-muted">${group.participants} participants</small>
+                            <small class="text-muted">${group.participants} participants • ${group.isAnnouncement ? 'Announcement Group' : 'Standard Group'}</small>
                         </div>
                     `;
                 });
@@ -758,7 +980,13 @@
             const preview = document.getElementById('filePreview');
             
             if (!file) {
-                preview.innerHTML = '<p class="text-muted">No file selected</p>';
+                preview.innerHTML = `
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-file-alt fa-2x mb-2"></i>
+                        <p>No file selected</p>
+                        <small>Upload a messages file to see preview</small>
+                    </div>
+                `;
                 return;
             }
 
@@ -769,12 +997,15 @@
                 
                 preview.innerHTML = `
                     <h6>File Preview (${messages.length} messages):</h6>
-                    <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 10px;">
                         ${messages.map((msg, index) => `
-                            <div class="mb-1">
+                            <div class="mb-2 p-2 bg-white rounded">
                                 <small class="text-muted">${index + 1}.</small> ${msg.substring(0, 100)}${msg.length > 100 ? '...' : ''}
                             </div>
                         `).join('')}
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Total messages: ${messages.length}</small>
                     </div>
                 `;
             };
@@ -796,32 +1027,32 @@
             if (targetType === 'individual') {
                 target = document.getElementById('targetNumber').value;
                 if (!target) {
-                    alert('Please enter target number');
+                    showAlert('Please enter target phone number', 'warning');
                     return;
                 }
             } else {
                 const selectedGroup = document.querySelector('.group-item.selected');
                 if (!selectedGroup) {
-                    alert('Please select a group');
+                    showAlert('Please select a WhatsApp group', 'warning');
                     return;
                 }
                 groupId = selectedGroup.dataset.groupId;
-                target = groupId; // Fallback
+                target = groupId;
             }
 
             if (!sessionId) {
-                alert('Please select a session');
+                showAlert('Please select a WhatsApp session', 'warning');
                 return;
             }
 
             if (!fileInput.files[0]) {
-                alert('Please select a messages file');
+                showAlert('Please select a messages file', 'warning');
                 return;
             }
 
             const sendButton = document.getElementById('sendButton');
             sendButton.disabled = true;
-            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending Messages...';
 
             const formData = new FormData();
             formData.append('sessionId', sessionId);
@@ -845,12 +1076,14 @@
                     document.getElementById('sendStatus').innerHTML = `
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle me-2"></i>
-                            <strong>Task Started!</strong><br>
+                            <strong>Message Task Started!</strong><br>
                             Task ID: <code>${data.taskId}</code><br>
                             Total Messages: ${data.totalMessages}<br>
-                            <button class="btn btn-sm btn-warning mt-2" onclick="stopTask('${data.taskId}')">
-                                <i class="fas fa-stop me-1"></i>Stop Task
-                            </button>
+                            <div class="mt-2">
+                                <button class="btn btn-warning btn-sm" onclick="stopTask('${data.taskId}')">
+                                    <i class="fas fa-stop me-1"></i>Stop This Task
+                                </button>
+                            </div>
                         </div>
                     `;
                     
@@ -863,6 +1096,9 @@
                     tasksTab.show();
                     
                     loadUserTasks();
+                    
+                    // Monitor task progress
+                    monitorTaskProgress(data.taskId);
                 } else {
                     document.getElementById('sendStatus').innerHTML = `
                         <div class="alert alert-danger">
@@ -881,7 +1117,57 @@
                 `;
             } finally {
                 sendButton.disabled = false;
-                sendButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Start Sending';
+                sendButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Start Sending Messages';
+            }
+        }
+
+        // Monitor task progress
+        async function monitorTaskProgress(taskId) {
+            try {
+                const response = await fetch(`/task-status?taskId=${taskId}`);
+                const data = await response.json();
+                
+                if (data.status === 'sending') {
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-sync-alt fa-spin me-2"></i>
+                            <strong>Sending Messages...</strong><br>
+                            Progress: ${data.sentMessages}/${data.totalMessages} (${data.progress}%)<br>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" role="progressbar" style="width: ${data.progress}%;" 
+                                     aria-valuenow="${data.progress}" aria-valuemin="0" aria-valuemax="100">
+                                    ${data.progress}%
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button class="btn btn-warning btn-sm" onclick="stopTask('${taskId}')">
+                                    <i class="fas fa-stop me-1"></i>Stop Task
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    setTimeout(() => monitorTaskProgress(taskId), 3000);
+                } else if (data.status === 'completed') {
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Task Completed!</strong><br>
+                            Successfully sent ${data.sentMessages}/${data.totalMessages} messages
+                        </div>
+                    `;
+                    loadUserTasks();
+                } else if (data.status === 'stopped') {
+                    document.getElementById('sendStatus').innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-stop-circle me-2"></i>
+                            <strong>Task Stopped</strong><br>
+                            Sent ${data.sentMessages}/${data.totalMessages} messages before stopping
+                        </div>
+                    `;
+                    loadUserTasks();
+                }
+            } catch (error) {
+                console.error('Error monitoring task:', error);
             }
         }
 
@@ -900,7 +1186,7 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Task stopped successfully');
+                    showAlert('Message task stopped successfully', 'warning');
                     loadUserTasks();
                     document.getElementById('sendStatus').innerHTML = `
                         <div class="alert alert-info">
@@ -909,11 +1195,11 @@
                         </div>
                     `;
                 } else {
-                    alert('Error stopping task: ' + data.error);
+                    showAlert('Error stopping task: ' + data.error, 'danger');
                 }
             } catch (error) {
                 console.error('Error stopping task:', error);
-                alert('Error stopping task');
+                showAlert('Error stopping task', 'danger');
             }
         }
 
@@ -930,9 +1216,10 @@
                 
                 if (data.tasks.length === 0) {
                     tasksList.innerHTML = `
-                        <div class="text-center text-muted">
-                            <i class="fas fa-tasks fa-3x mb-3"></i>
-                            <p>No active tasks</p>
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-tasks fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
+                            <p>No active message tasks</p>
+                            <small class="text-muted">Your message sending tasks will appear here</small>
                         </div>
                     `;
                     return;
@@ -942,29 +1229,40 @@
                 data.tasks.forEach(task => {
                     const statusClass = task.isSending ? 'status-connecting' : 'status-connected';
                     const statusText = task.isSending ? 'Sending...' : 'Completed';
+                    const statusIcon = task.isSending ? 'fa-sync-alt fa-spin' : 'fa-check-circle';
                     
                     tasksHTML += `
                         <div class="card mb-3 task-card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="card-title">Task: ${task.taskId}</h6>
-                                        <p class="card-text">
-                                            <span class="${statusClass}">${statusText}</span> • 
-                                            Progress: ${task.sentMessages}/${task.totalMessages} messages
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title d-flex align-items-center">
+                                            <i class="fas fa-tasks me-2 text-primary"></i>
+                                            Task: ${task.taskId}
+                                        </h6>
+                                        <p class="card-text mb-2">
+                                            <span class="${statusClass}">
+                                                <i class="fas ${statusIcon} me-1"></i>${statusText}
+                                            </span> 
+                                            • Progress: ${task.sentMessages}/${task.totalMessages} messages
                                         </p>
-                                        <div class="progress" style="width: 200px;">
+                                        <div class="progress mb-2" style="width: 100%; max-width: 300px;">
                                             <div class="progress-bar" role="progressbar" style="width: ${task.progress}%;" 
                                                  aria-valuenow="${task.progress}" aria-valuemin="0" aria-valuemax="100">
                                                 ${task.progress}%
                                             </div>
                                         </div>
-                                        <small class="text-muted">Started: ${new Date(task.startTime).toLocaleString()}</small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Started: ${new Date(task.startTime).toLocaleString()}
+                                        </small>
                                     </div>
                                     ${task.isSending ? `
-                                        <button class="btn btn-sm btn-warning" onclick="stopTask('${task.taskId}')">
-                                            <i class="fas fa-stop me-1"></i>Stop
-                                        </button>
+                                        <div>
+                                            <button class="btn btn-warning btn-sm" onclick="stopTask('${task.taskId}')">
+                                                <i class="fas fa-stop me-1"></i>Stop
+                                            </button>
+                                        </div>
                                     ` : ''}
                                 </div>
                             </div>
@@ -999,7 +1297,29 @@
             }
         }
 
-        // Auto-refresh tasks every 10 seconds
+        // Show alert message
+        function showAlert(message, type) {
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Add to page (you can customize where to show alerts)
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Auto-refresh tasks every 10 seconds when on tasks tab
         setInterval(() => {
             if (document.getElementById('tasks-tab').classList.contains('active')) {
                 loadUserTasks();
