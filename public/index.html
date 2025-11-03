@@ -8,66 +8,81 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary: #25D366;
-            --dark: #1e1e1e;
-            --darker: #121212;
-            --light: #f8f9fa;
-            --gray: #6c757d;
+            --primary: #666666;
+            --accent: #888888;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+            --transparent: rgba(255, 255, 255, 0.9);
         }
         
         body {
-            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
-            color: var(--light);
+            /* YOUR BACKGROUND IMAGE LINK PASTED HERE */
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #333;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
         
         .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
             padding: 25px;
             margin-bottom: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .glass-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.98);
         }
         
         .header {
-            background: linear-gradient(135deg, var(--primary) 0%, #128C7E 100%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
             padding: 30px 0;
             border-radius: 0 0 30px 30px;
             margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
         
         .logo {
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 10px;
+            color: #333;
         }
         
-        .btn-whatsapp {
-            background: linear-gradient(135deg, var(--primary) 0%, #128C7E 100%);
-            border: none;
-            color: white;
+        .btn-primary-custom {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #333;
             padding: 12px 25px;
             border-radius: 25px;
             font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
-        .btn-whatsapp:hover {
+        .btn-primary-custom:hover {
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 1);
+            color: #333;
         }
         
         .btn-danger-custom {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            border: none;
+            background: rgba(220, 53, 69, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 53, 69, 0.3);
             color: white;
             padding: 10px 20px;
             border-radius: 20px;
@@ -75,7 +90,7 @@
         }
         
         .status-connected {
-            color: var(--primary);
+            color: #28a745;
             font-weight: bold;
         }
         
@@ -92,22 +107,23 @@
         .qr-code {
             background: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 15px;
             max-width: 250px;
             margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
         .progress-bar-custom {
-            background: linear-gradient(90deg, var(--primary) 0%, #128C7E 100%);
+            background: linear-gradient(90deg, #666666 0%, #888888 100%);
             border-radius: 10px;
         }
         
         .session-card {
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid #666666;
         }
         
         .task-card {
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #888888;
         }
         
         .stats-card {
@@ -118,12 +134,12 @@
         .stats-number {
             font-size: 2rem;
             font-weight: bold;
-            color: var(--primary);
+            color: #333;
         }
         
         .feature-icon {
             font-size: 2rem;
-            color: var(--primary);
+            color: #666666;
             margin-bottom: 15px;
         }
         
@@ -133,44 +149,148 @@
             right: 20px;
             z-index: 1050;
             min-width: 300px;
+            backdrop-filter: blur(10px);
         }
         
-        .nav-tabs-custom .nav-link {
-            color: var(--light);
+        .form-control {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #666666;
+            box-shadow: 0 0 0 0.2rem rgba(102, 102, 102, 0.15);
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(25px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .hero-section {
+            text-align: center;
+            padding: 50px 0;
+            margin-bottom: 30px;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .nav-pills-custom .nav-link {
+            background: rgba(255, 255, 255, 0.7);
+            color: #333;
+            border-radius: 15px;
+            margin: 5px;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-pills-custom .nav-link.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .badge-custom {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-radius: 10px;
+            padding: 5px 10px;
+            font-weight: 600;
+        }
+        
+        /* Elegant animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .background-settings {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.9);
             border: none;
-            padding: 15px 25px;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
         }
         
-        .nav-tabs-custom .nav-link.active {
-            background: rgba(37, 211, 102, 0.2);
-            color: var(--primary);
-            border-bottom: 3px solid var(--primary);
+        .settings-btn:hover {
+            transform: rotate(30deg);
+            background: rgba(255, 255, 255, 1);
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
+    <!-- Background Settings Button -->
+    <div class="background-settings">
+        <button class="btn settings-btn" data-bs-toggle="modal" data-bs-target="#backgroundModal">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="logo">
-                        <i class="fab fa-whatsapp me-2"></i>
-                        WhatsApp Bulk Sender Pro
-                    </div>
-                    <p class="mb-0">Send bulk messages efficiently with multiple WhatsApp sessions</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <div class="btn-group">
-                        <button class="btn btn-whatsapp" onclick="showSection('dashboard')">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </button>
-                        <button class="btn btn-outline-light" onclick="showSection('sessions')">
-                            <i class="fas fa-mobile-alt me-2"></i>Sessions
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <h1 class="hero-title">
+                <i class="fas fa-paper-plane me-2"></i>
+                WhatsApp Bulk Sender
+            </h1>
+            <p class="hero-subtitle">Professional Bulk Messaging Platform</p>
         </div>
     </div>
 
@@ -178,8 +298,29 @@
         <!-- Alert Container -->
         <div id="alertContainer"></div>
 
+        <!-- Navigation -->
+        <div class="glass-card mb-4">
+            <ul class="nav nav-pills nav-pills-custom justify-content-center">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('sessions')">
+                        <i class="fas fa-mobile-alt me-2"></i>Sessions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSection('send-message')">
+                        <i class="fas fa-paper-plane me-2"></i>Send Messages
+                    </a>
+                </li>
+            </ul>
+        </div>
+
         <!-- Dashboard Section -->
-        <div id="dashboard-section">
+        <div id="dashboard-section" class="animate-fade-in">
             <div class="row">
                 <!-- Stats Cards -->
                 <div class="col-md-3">
@@ -227,12 +368,12 @@
                         <h4><i class="fas fa-bolt me-2"></i>Quick Actions</h4>
                         <div class="row mt-3">
                             <div class="col-6">
-                                <button class="btn btn-whatsapp w-100 mb-2" onclick="showSection('sessions')">
+                                <button class="btn btn-primary-custom w-100 mb-2" onclick="showSection('sessions')">
                                     <i class="fas fa-plus me-2"></i>Add Session
                                 </button>
                             </div>
                             <div class="col-6">
-                                <button class="btn btn-whatsapp w-100 mb-2" onclick="showSection('send-message')">
+                                <button class="btn btn-primary-custom w-100 mb-2" onclick="showSection('send-message')">
                                     <i class="fas fa-paper-plane me-2"></i>Send Messages
                                 </button>
                             </div>
@@ -271,11 +412,11 @@
         </div>
 
         <!-- Sessions Section -->
-        <div id="sessions-section" style="display: none;">
+        <div id="sessions-section" style="display: none;" class="animate-fade-in">
             <div class="glass-card">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4><i class="fas fa-mobile-alt me-2"></i>Manage WhatsApp Sessions</h4>
-                    <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                    <button class="btn btn-primary-custom" onclick="showPairingModal()">
                         <i class="fas fa-plus me-2"></i>Add New Session
                     </button>
                 </div>
@@ -285,7 +426,7 @@
                         <i class="fas fa-mobile-alt fa-3x mb-3"></i>
                         <h5>No WhatsApp sessions</h5>
                         <p>Add your first WhatsApp session to get started</p>
-                        <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                        <button class="btn btn-primary-custom" onclick="showPairingModal()">
                             <i class="fas fa-plus me-2"></i>Add First Session
                         </button>
                     </div>
@@ -294,7 +435,7 @@
         </div>
 
         <!-- Send Message Section -->
-        <div id="send-message-section" style="display: none;">
+        <div id="send-message-section" style="display: none;" class="animate-fade-in">
             <div class="glass-card">
                 <h4><i class="fas fa-paper-plane me-2"></i>Send Bulk Messages</h4>
                 
@@ -302,14 +443,14 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Select Session</label>
-                            <select class="form-control bg-dark text-light" id="messageSession">
+                            <select class="form-control" id="messageSession">
                                 <option value="">Choose a connected session...</option>
                             </select>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Target Type</label>
-                            <select class="form-control bg-dark text-light" id="targetType">
+                            <select class="form-control" id="targetType">
                                 <option value="user">Personal Chat</option>
                                 <option value="group">Group</option>
                             </select>
@@ -317,13 +458,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Target Number/Group ID</label>
-                            <input type="text" class="form-control bg-dark text-light" id="target" 
+                            <input type="text" class="form-control" id="target" 
                                    placeholder="e.g., 919876543210 or group-id@g.us">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Delay Between Messages (seconds)</label>
-                            <input type="number" class="form-control bg-dark text-light" id="delaySec" 
+                            <input type="number" class="form-control" id="delaySec" 
                                    value="2" min="1" max="60">
                         </div>
                     </div>
@@ -331,28 +472,76 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Message Prefix (Optional)</label>
-                            <input type="text" class="form-control bg-dark text-light" id="prefix" 
+                            <input type="text" class="form-control" id="prefix" 
                                    placeholder="e.g., Hello, ">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Messages File</label>
-                            <input type="file" class="form-control bg-dark text-light" id="messageFile" 
+                            <input type="file" class="form-control" id="messageFile" 
                                    accept=".txt,.csv">
-                            <div class="form-text text-light">
+                            <div class="form-text">
                                 Upload a text file with one message per line
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Preview</label>
-                            <textarea class="form-control bg-dark text-light" id="messagePreview" 
+                            <textarea class="form-control" id="messagePreview" 
                                       rows="4" placeholder="Message preview will appear here..." readonly></textarea>
                         </div>
 
-                        <button class="btn btn-whatsapp w-100" onclick="startSendingMessages()">
+                        <button class="btn btn-primary-custom w-100" onclick="startSendingMessages()">
                             <i class="fas fa-rocket me-2"></i>Start Sending Messages
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Settings Modal -->
+    <div class="modal fade" id="backgroundModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-image me-2"></i>Background Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Background Image URL</label>
+                        <input type="text" class="form-control" id="backgroundUrl" 
+                               value="https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg"
+                               placeholder="Paste your image URL here">
+                        <div class="form-text">
+                            Enter a direct image link for the background
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Background Darkness</label>
+                        <input type="range" class="form-range" id="backgroundDarkness" 
+                               min="0.1" max="0.9" step="0.1" value="0.6">
+                        <div class="form-text">
+                            Adjust how dark the overlay is (for better text readability)
+                        </div>
+                    </div>
+                    <button class="btn btn-primary-custom w-100" onclick="applyBackground()">
+                        <i class="fas fa-check me-2"></i>Apply Background
+                    </button>
+                    
+                    <div class="mt-3">
+                        <h6>Quick Background Options:</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" onclick="setDefaultBackground()">
+                                Default Gradient
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="setCurrentBackground()">
+                                Current Image
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -362,26 +551,26 @@
     <!-- Pairing Modal -->
     <div class="modal fade" id="pairingModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark text-light">
-                <div class="modal-header border-secondary">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fab fa-whatsapp me-2"></i>Pair WhatsApp Number
+                        <i class="fas fa-mobile-alt me-2"></i>Pair WhatsApp Number
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Phone Number</label>
-                                <input type="text" class="form-control bg-dark text-light" id="pairingNumber" 
+                                <input type="text" class="form-control" id="pairingNumber" 
                                        placeholder="e.g., 919876543210" required>
-                                <div class="form-text text-light">
+                                <div class="form-text">
                                     Include country code without + sign
                                 </div>
                             </div>
                             
-                            <button class="btn btn-whatsapp w-100" onclick="startPairing()">
+                            <button class="btn btn-primary-custom w-100" onclick="startPairing()">
                                 <i class="fas fa-qrcode me-2"></i>Generate QR Code
                             </button>
                         </div>
@@ -394,10 +583,10 @@
                                 </div>
                                 <div class="mt-3">
                                     <p class="mb-1">Or use pairing code:</p>
-                                    <h3 id="pairingCodeDisplay" class="text-primary"></h3>
+                                    <h3 id="pairingCodeDisplay" class="text-dark"></h3>
                                 </div>
                                 <div class="mt-3">
-                                    <div class="spinner-border text-primary" role="status">
+                                    <div class="spinner-border text-dark" role="status">
                                         <span class="visually-hidden">Waiting for pairing...</span>
                                     </div>
                                     <p class="mt-2">Waiting for WhatsApp pairing...</p>
@@ -413,8 +602,8 @@
     <!-- Task Progress Modal -->
     <div class="modal fade" id="taskProgressModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light">
-                <div class="modal-header border-secondary">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-paper-plane me-2"></i>Sending Messages
                     </h5>
@@ -459,7 +648,56 @@
             initializeUser();
             loadSessions();
             updateStats();
+            
+            // Load saved background
+            const savedBg = localStorage.getItem('whatsapp_bg_url');
+            const savedDarkness = localStorage.getItem('whatsapp_bg_darkness') || '0.6';
+            
+            if (savedBg) {
+                document.body.style.background = `linear-gradient(rgba(0, 0, 0, ${savedDarkness}), rgba(0, 0, 0, ${savedDarkness})), url('${savedBg}')`;
+                document.getElementById('backgroundUrl').value = savedBg;
+                document.getElementById('backgroundDarkness').value = savedDarkness;
+            } else {
+                // Set the default background to your image
+                localStorage.setItem('whatsapp_bg_url', 'https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg');
+                localStorage.setItem('whatsapp_bg_darkness', '0.6');
+            }
         });
+
+        // Background functions
+        function applyBackground() {
+            const url = document.getElementById('backgroundUrl').value;
+            const darkness = document.getElementById('backgroundDarkness').value;
+            
+            if (url) {
+                document.body.style.background = `linear-gradient(rgba(0, 0, 0, ${darkness}), rgba(0, 0, 0, ${darkness})), url('${url}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundAttachment = 'fixed';
+                
+                // Save to localStorage
+                localStorage.setItem('whatsapp_bg_url', url);
+                localStorage.setItem('whatsapp_bg_darkness', darkness);
+                
+                showAlert('Background updated successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('backgroundModal')).hide();
+            } else {
+                showAlert('Please enter a valid image URL', 'warning');
+            }
+        }
+
+        function setDefaultBackground() {
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            document.body.style.backgroundAttachment = 'fixed';
+            localStorage.removeItem('whatsapp_bg_url');
+            localStorage.removeItem('whatsapp_bg_darkness');
+            showAlert('Default background applied!', 'success');
+        }
+
+        function setCurrentBackground() {
+            document.getElementById('backgroundUrl').value = 'https://strict-azure-w6nwohqhmb.edgeone.app/IMG_1350.jpeg';
+            applyBackground();
+        }
 
         // Show alert function
         function showAlert(message, type = 'success') {
@@ -508,6 +746,9 @@
             // Show selected section
             document.getElementById(sectionName + '-section').style.display = 'block';
             
+            // Add animation
+            document.getElementById(sectionName + '-section').classList.add('animate-fade-in');
+            
             // Load data for section
             if (sectionName === 'sessions') {
                 loadSessions();
@@ -550,14 +791,14 @@
                                     </div>
                                     <div class="col-md-3 text-end">
                                         ${session.registered ? `
-                                            <button class="btn btn-sm btn-whatsapp me-2" onclick="refreshGroups('${session.sessionId}')">
+                                            <button class="btn btn-sm btn-primary-custom me-2" onclick="refreshGroups('${session.sessionId}')">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                             <button class="btn btn-sm btn-danger-custom" onclick="deleteSession('${session.sessionId}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         ` : `
-                                            <button class="btn btn-sm btn-whatsapp" onclick="reconnectSession('${session.sessionId}')">
+                                            <button class="btn btn-sm btn-primary-custom" onclick="reconnectSession('${session.sessionId}')">
                                                 <i class="fas fa-plug"></i> Reconnect
                                             </button>
                                         `}
@@ -574,7 +815,7 @@
                             <i class="fas fa-mobile-alt fa-3x mb-3"></i>
                             <h5>No WhatsApp sessions</h5>
                             <p>Add your first WhatsApp session to get started</p>
-                            <button class="btn btn-whatsapp" onclick="showPairingModal()">
+                            <button class="btn btn-primary-custom" onclick="showPairingModal()">
                                 <i class="fas fa-plus me-2"></i>Add First Session
                             </button>
                         </div>
