@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bulk Sender Pro</title>
+    <title>AAHAN WHATSAPP SERVER</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Teko:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #666666;
@@ -13,6 +14,8 @@
             --white: #ffffff;
             --light-gray: #f8f9fa;
             --transparent: rgba(255, 255, 255, 0.9);
+            --neon-blue: #00f3ff;
+            --neon-glow: 0 0 10px #00f3ff, 0 0 20px #00f3ff, 0 0 30px #00f3ff;
         }
         
         body {
@@ -23,7 +26,7 @@
             background-position: center;
             background-attachment: fixed;
             color: #333;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             min-height: 100vh;
         }
         
@@ -31,17 +34,68 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
+            border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
             transition: all 0.3s ease;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* BLUE GLOWING CORNERS */
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 17px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            z-index: -1;
+        }
+        
+        @keyframes glowing {
+            0% {
+                background-position: 0% 50%;
+                box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+            }
+            50% {
+                background-position: 100% 50%;
+                box-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff;
+            }
+            100% {
+                background-position: 0% 50%;
+                box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+            }
         }
         
         .glass-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
             background: rgba(255, 255, 255, 0.98);
+        }
+        
+        .glass-card:hover::before {
+            opacity: 1;
+            animation: glowing 1.5s ease-in-out infinite;
         }
         
         .header {
@@ -51,13 +105,61 @@
             border-radius: 0 0 30px 30px;
             margin-bottom: 30px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 0 0 32px 32px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0.7;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 0 0 30px 30px;
+            z-index: -1;
         }
         
         .logo {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 3.5rem;
+            font-weight: 900;
             margin-bottom: 10px;
             color: #333;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #0066ff 0%, #00f3ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .logo-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            font-family: 'Teko', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            font-weight: 500;
         }
         
         .btn-primary-custom {
@@ -70,6 +172,30 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary-custom::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 27px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn-primary-custom:hover::before {
+            opacity: 0.7;
         }
         
         .btn-primary-custom:hover {
@@ -87,21 +213,29 @@
             padding: 10px 20px;
             border-radius: 20px;
             font-weight: 600;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
         }
         
         .status-connected {
             color: #28a745;
             font-weight: bold;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
         }
         
         .status-connecting {
             color: #ffc107;
             font-weight: bold;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
         }
         
         .status-disconnected {
             color: #dc3545;
             font-weight: bold;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
         }
         
         .qr-code {
@@ -111,19 +245,36 @@
             max-width: 250px;
             margin: 0 auto;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .qr-code::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 17px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0.5;
         }
         
         .progress-bar-custom {
-            background: linear-gradient(90deg, #666666 0%, #888888 100%);
+            background: linear-gradient(90deg, #0066ff 0%, #00f3ff 100%);
             border-radius: 10px;
         }
         
         .session-card {
-            border-left: 4px solid #666666;
+            border-left: 4px solid #0066ff;
         }
         
         .task-card {
-            border-left: 4px solid #888888;
+            border-left: 4px solid #00f3ff;
         }
         
         .stats-card {
@@ -135,11 +286,12 @@
             font-size: 2rem;
             font-weight: bold;
             color: #333;
+            font-family: 'Orbitron', monospace;
         }
         
         .feature-icon {
             font-size: 2rem;
-            color: #666666;
+            color: #0066ff;
             margin-bottom: 15px;
         }
         
@@ -150,6 +302,9 @@
             z-index: 1050;
             min-width: 300px;
             backdrop-filter: blur(10px);
+            border-radius: 10px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
         }
         
         .form-control {
@@ -158,12 +313,13 @@
             border-radius: 12px;
             padding: 12px 15px;
             transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
         }
         
         .form-control:focus {
             background: rgba(255, 255, 255, 0.95);
-            border-color: #666666;
-            box-shadow: 0 0 0 0.2rem rgba(102, 102, 102, 0.15);
+            border-color: #0066ff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 102, 255, 0.15);
         }
         
         .modal-content {
@@ -171,6 +327,24 @@
             backdrop-filter: blur(25px);
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            font-family: 'Rajdhani', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 22px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0.5;
         }
         
         .hero-section {
@@ -200,6 +374,30 @@
             margin: 5px;
             padding: 12px 20px;
             transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-pills-custom .nav-link::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 17px;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-pills-custom .nav-link.active::before {
+            opacity: 0.7;
         }
         
         .nav-pills-custom .nav-link.active {
@@ -243,12 +441,12 @@
         }
         
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, #0066ff 0%, #00f3ff 100%);
             border-radius: 10px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
+            background: linear-gradient(135deg, #00f3ff 0%, #0066ff 100%);
         }
         
         .background-settings {
@@ -267,11 +465,45 @@
             font-size: 1.2rem;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .settings-btn::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            border-radius: 50%;
+            z-index: -1;
+            animation: glowing 3s ease-in-out infinite;
+            opacity: 0.7;
         }
         
         .settings-btn:hover {
             transform: rotate(30deg);
             background: rgba(255, 255, 255, 1);
+        }
+        
+        /* Tech elements */
+        .tech-border {
+            position: relative;
+            padding: 2px;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #00f3ff, #0066ff, #00f3ff, #0066ff);
+            background-size: 400% 400%;
+            animation: glowing 3s ease-in-out infinite;
+        }
+        
+        .tech-border-inner {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 13px;
+            padding: 20px;
         }
     </style>
 </head>
@@ -283,14 +515,15 @@
         </button>
     </div>
 
-    <!-- Hero Section -->
-    <div class="hero-section">
+    <!-- Header with AAHAN WHATSAPP SERVER -->
+    <div class="header">
         <div class="container">
-            <h1 class="hero-title">
-                <i class="fas fa-paper-plane me-2"></i>
-                WhatsApp Bulk Sender
-            </h1>
-            <p class="hero-subtitle">Professional Bulk Messaging Platform</p>
+            <div class="logo">
+                AAHAN WHATSAPP SERVER
+            </div>
+            <div class="logo-subtitle">
+                Professional Bulk Messaging Platform
+            </div>
         </div>
     </div>
 
