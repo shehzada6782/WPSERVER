@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAHAN WP SERVER - WhatsApp Bulk Sender</title>
+    <title>AAHAN WP SERVER</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -12,29 +12,25 @@
             --secondary: #128C7E;
             --dark: #075E54;
             --light: #DCF8C6;
-            --accent: #34B7F1;
         }
         
         body {
-            background: linear-gradient(135deg, var(--dark) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
         }
         
         .navbar-brand {
             font-weight: bold;
-            font-size: 1.8rem;
-            color: white !important;
+            color: var(--primary) !important;
         }
         
         .card {
             border: none;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             transition: transform 0.3s ease;
-            background: rgba(255,255,255,0.95);
         }
         
         .card:hover {
@@ -42,46 +38,22 @@
         }
         
         .card-header {
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--dark) 100%);
+            background: linear-gradient(45deg, var(--dark), var(--secondary));
             color: white;
             border-radius: 15px 15px 0 0 !important;
             font-weight: 600;
-            font-size: 1.1rem;
         }
         
         .btn-whatsapp {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 25px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
             color: white;
+            border: none;
             font-weight: 600;
-            transition: all 0.3s ease;
         }
         
         .btn-whatsapp:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 25px;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%);
-            border: none;
-            border-radius: 10px;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #FFD93D 0%, #FF9A3D 100%);
-            border: none;
-            border-radius: 10px;
-            color: #333;
+            background: linear-gradient(45deg, var(--secondary), var(--dark));
+            color: white;
         }
         
         .status-connected {
@@ -90,154 +62,65 @@
         }
         
         .status-disconnected {
-            color: #FF6B6B;
+            color: #dc3545;
             font-weight: bold;
         }
         
-        .status-connecting {
-            color: #FFD93D;
-            font-weight: bold;
+        .progress {
+            height: 10px;
+            border-radius: 10px;
         }
         
-        .qr-code {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
+        .session-card {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .task-card {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .heartbeat {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .stats-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .code-display {
+            background: #f8f9fa;
+            border: 2px dashed #25D366;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
             text-align: center;
-            margin: 15px 0;
-            border: 3px solid var(--light);
-        }
-        
-        .user-stats {
-            background: linear-gradient(135deg, var(--accent) 0%, #25D366 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            font-weight: 500;
-        }
-        
-        .nav-tabs {
-            border-bottom: 3px solid var(--light);
-        }
-        
-        .nav-tabs .nav-link {
-            color: var(--dark);
-            font-weight: 600;
-            border: none;
-            border-radius: 10px 10px 0 0;
-            margin-right: 5px;
-            padding: 12px 25px;
-        }
-        
-        .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
+            letter-spacing: 3px;
         }
         
         .tab-content {
             background: white;
             border-radius: 0 0 15px 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
         }
         
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.25);
-        }
-        
-        .refresh-btn {
-            background: var(--accent);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, var(--dark), var(--secondary));
             color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+            border: none;
+            font-weight: 600;
         }
         
-        .refresh-btn:hover {
-            transform: rotate(180deg);
-            background: var(--secondary);
-        }
-        
-        .session-card {
-            border-left: 5px solid var(--primary);
-            transition: all 0.3s ease;
-        }
-        
-        .session-card:hover {
-            border-left-color: var(--accent);
-        }
-        
-        .task-card {
-            border-left: 5px solid var(--accent);
-        }
-        
-        .progress {
-            height: 12px;
-            border-radius: 10px;
-            background: #e9ecef;
-        }
-        
-        .progress-bar {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            border-radius: 10px;
-        }
-        
-        .group-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            margin-bottom: 5px;
-        }
-        
-        .group-item:hover {
-            background-color: var(--light);
-            transform: translateX(5px);
-        }
-        
-        .group-item.selected {
-            background-color: var(--light);
-            border-left: 4px solid var(--primary);
-        }
-        
-        @media (max-width: 768px) {
-            .stat-number {
-                font-size: 2rem;
-            }
-            
-            .nav-tabs .nav-link {
-                padding: 10px 15px;
-                font-size: 0.9rem;
-            }
+        .nav-tabs .nav-link {
+            color: var(--dark);
+            font-weight: 500;
         }
     </style>
 </head>
@@ -246,123 +129,129 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fab fa-whatsapp me-2"></i>
-                AAHAN WP SERVER
+                <i class="fab fa-whatsapp"></i> AAHAN HERE
             </a>
-            <div class="navbar-nav ms-auto">
-                <div class="nav-item">
-                    <span class="navbar-text">
-                        <i class="fas fa-user me-1"></i>
-                        <span id="currentUser">User</span>
-                    </span>
-                </div>
-            </div>
+            <span class="navbar-text">
+                <small class="text-success heartbeat">
+                    <i class="fas fa-heart"></i> UNLIMITED UPTIME
+                </small>
+            </span>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <!-- User Stats -->
-        <div class="user-stats">
-            <div class="row text-center">
-                <div class="col-md-3 col-6 mb-3">
-                    <h3 class="stat-number" id="totalSessions">0</h3>
-                    <div class="stat-label"><i class="fas fa-mobile-alt me-1"></i>Connected Sessions</div>
+    <div class="container my-4">
+        <!-- Stats Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card text-white">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-users"></i></h3>
+                        <h5 id="totalSessions">0</h5>
+                        <small>Active Sessions</small>
+                    </div>
                 </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <h3 class="stat-number" id="activeTasks">0</h3>
-                    <div class="stat-label"><i class="fas fa-tasks me-1"></i>Active Tasks</div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-white">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-tasks"></i></h3>
+                        <h5 id="totalTasks">0</h5>
+                        <small>Active Tasks</small>
+                    </div>
                 </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <h3 class="stat-number" id="totalMessages">0</h3>
-                    <div class="stat-label"><i class="fas fa-paper-plane me-1"></i>Messages Sent</div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-white">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-paper-plane"></i></h3>
+                        <h5 id="totalMessages">0</h5>
+                        <small>Messages Sent</small>
+                    </div>
                 </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <h3 class="stat-number" id="userSince">-</h3>
-                    <div class="stat-label"><i class="fas fa-user-clock me-1"></i>User Since</div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-white">
+                    <div class="card-body text-center">
+                        <h3><i class="fas fa-heartbeat"></i></h3>
+                        <h5 id="uptime">0s</h5>
+                        <small>System Uptime</small>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <!-- Main Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
-                    <i class="fas fa-mobile-alt me-2"></i>WhatsApp Sessions
+                    <i class="fas fa-mobile-alt"></i> Sessions
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="send-tab" data-bs-toggle="tab" data-bs-target="#send" type="button" role="tab">
-                    <i class="fas fa-paper-plane me-2"></i>Send Messages
+                    <i class="fas fa-paper-plane"></i> Send Messages
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
-                    <i class="fas fa-tasks me-2"></i>Message Tasks
+                    <i class="fas fa-tasks"></i> Active Tasks
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                    <i class="fas fa-cog"></i> Settings
                 </button>
             </li>
         </ul>
 
-        <div class="tab-content" id="myTabContent">
+        <div class="tab-content" id="mainTabsContent">
             <!-- Sessions Tab -->
             <div class="tab-pane fade show active" id="sessions" role="tabpanel">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="card session-card">
+                        <div class="card">
                             <div class="card-header">
-                                <i class="fas fa-qrcode me-2"></i>Connect WhatsApp Number
+                                <i class="fas fa-plus-circle"></i> Pair New Number
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Your User ID</label>
-                                    <input type="text" class="form-control" id="userId" placeholder="Enter your unique user ID" value="user_${Math.floor(1000 + Math.random() * 9000)}">
-                                    <div class="form-text">This ID helps us manage your sessions securely</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">WhatsApp Number</label>
-                                    <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 919876543210">
-                                    <div class="form-text">Enter number with country code (without + sign)</div>
-                                </div>
-                                <button class="btn btn-whatsapp w-100" onclick="pairNumber()" id="pairButton">
-                                    <i class="fas fa-link me-2"></i>Connect WhatsApp
-                                </button>
+                                <form id="pairForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Your User ID</label>
+                                        <input type="text" class="form-control" id="userId" placeholder="Enter unique user ID" required>
+                                        <div class="form-text">This identifies your sessions</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">WhatsApp Number</label>
+                                        <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 919876543210" required>
+                                        <div class="form-text">Country code + number (without +)</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-whatsapp w-100">
+                                        <i class="fas fa-qrcode"></i> Get Pairing Code
+                                    </button>
+                                </form>
                             </div>
                         </div>
 
-                        <div class="card" id="qrCard" style="display: none;">
+                        <div class="card mt-3">
                             <div class="card-header">
-                                <i class="fas fa-qrcode me-2"></i>WhatsApp Pairing
+                                <i class="fas fa-qrcode"></i> Pairing Code
                             </div>
                             <div class="card-body text-center">
-                                <div id="pairingStatus" class="alert alert-info">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Generating pairing code...
-                                </div>
-                                <div class="qr-code" id="qrContainer">
-                                    <!-- QR code will appear here -->
-                                </div>
-                                <div class="mt-3">
-                                    <p class="fw-bold">How to connect:</p>
-                                    <div class="text-start">
-                                        <div class="d-flex mb-2">
-                                            <div class="me-3"><i class="fas fa-mobile-alt text-success"></i></div>
-                                            <div>Open WhatsApp on your phone</div>
-                                        </div>
-                                        <div class="d-flex mb-2">
-                                            <div class="me-3"><i class="fas fa-cog text-success"></i></div>
-                                            <div>Go to Settings → Linked Devices</div>
-                                        </div>
-                                        <div class="d-flex mb-2">
-                                            <div class="me-3"><i class="fas fa-link text-success"></i></div>
-                                            <div>Tap on "Link a Device"</div>
-                                        </div>
-                                        <div class="d-flex">
-                                            <div class="me-3"><i class="fas fa-qrcode text-success"></i></div>
-                                            <div>Scan the QR code above</div>
-                                        </div>
+                                <div id="pairingResult" style="display: none;">
+                                    <div class="code-display mb-3">
+                                        <span id="pairingCode">-----</span>
+                                    </div>
+                                    <p class="text-muted" id="pairingMessage">
+                                        Use this code in WhatsApp → Linked Devices
+                                    </p>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Session ID: <code id="sessionIdDisplay"></code>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary mt-3" onclick="hideQR()">
-                                    <i class="fas fa-times me-2"></i>Cancel
-                                </button>
+                                <div id="pairingWaiting" class="text-center">
+                                    <p class="text-muted">Enter details above to get pairing code</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -370,19 +259,33 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-list me-2"></i>Your Active Sessions</span>
-                                <button class="refresh-btn" onclick="loadUserSessions()" title="Refresh Sessions">
-                                    <i class="fas fa-sync-alt"></i>
+                                <span><i class="fas fa-list"></i> Your Sessions</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadUserSessions()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
                             </div>
                             <div class="card-body">
                                 <div id="sessionsList">
-                                    <div class="text-center text-muted py-4">
-                                        <i class="fas fa-mobile-alt fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
-                                        <p>No WhatsApp sessions connected yet</p>
-                                        <small class="text-muted">Connect your first WhatsApp account to get started</small>
-                                    </div>
+                                    <p class="text-muted text-center">No active sessions</p>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="fas fa-users"></i> Group Management
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Session</label>
+                                    <select class="form-select" id="groupsSessionSelect">
+                                        <option value="">Select a connected session</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-whatsapp w-100" onclick="loadGroups()">
+                                    <i class="fas fa-sync-alt"></i> Load Groups
+                                </button>
+                                <div id="groupsList" class="mt-3"></div>
                             </div>
                         </div>
                     </div>
@@ -392,114 +295,176 @@
             <!-- Send Messages Tab -->
             <div class="tab-pane fade" id="send" role="tabpanel">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="card">
                             <div class="card-header">
-                                <i class="fas fa-cogs me-2"></i>Message Settings
+                                <i class="fas fa-cogs"></i> Message Configuration
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Your User ID</label>
-                                    <input type="text" class="form-control" id="sendUserId" placeholder="Enter your user ID">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Select WhatsApp Session</label>
-                                    <select class="form-select" id="sessionSelect">
-                                        <option value="">-- Select Session --</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Send To</label>
-                                    <select class="form-select" id="targetType" onchange="toggleTargetInput()">
-                                        <option value="individual">Individual Number</option>
-                                        <option value="group">WhatsApp Group</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3" id="individualTargetDiv">
-                                    <label class="form-label">Phone Number</label>
-                                    <input type="text" class="form-control" id="targetNumber" placeholder="e.g., 919876543210">
-                                </div>
-                                <div class="mb-3" id="groupTargetDiv" style="display: none;">
-                                    <label class="form-label">Select Group</label>
-                                    <div class="group-list" id="groupsList" style="max-height: 200px; overflow-y: auto;">
-                                        <div class="text-center text-muted py-3">
-                                            <i class="fas fa-users fa-2x mb-2"></i>
-                                            <p>Select a session first to load groups</p>
-                                        </div>
+                                <form id="sendForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Your User ID</label>
+                                        <input type="text" class="form-control" id="sendUserId" placeholder="Same as pairing user ID" required>
                                     </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Message Prefix (Optional)</label>
-                                    <input type="text" class="form-control" id="messagePrefix" placeholder="e.g., Hello,">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Delay Between Messages (seconds)</label>
-                                    <input type="number" class="form-control" id="delaySeconds" value="2" min="1" max="60">
-                                    <div class="form-text">Recommended: 2-5 seconds to avoid rate limits</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Messages File</label>
-                                    <input type="file" class="form-control" id="messageFile" accept=".txt">
-                                    <div class="form-text">Upload a .txt file with one message per line</div>
-                                </div>
-                                <button class="btn btn-success w-100" onclick="startSending()" id="sendButton">
-                                    <i class="fas fa-paper-plane me-2"></i>Start Sending Messages
-                                </button>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Select Session</label>
+                                        <select class="form-select" id="sessionSelect" required>
+                                            <option value="">Select a connected session</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Target Type</label>
+                                        <select class="form-select" id="targetType" required>
+                                            <option value="group">Group</option>
+                                            <option value="individual">Individual Number</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3" id="groupTargetDiv">
+                                        <label class="form-label">Select Group</label>
+                                        <select class="form-select" id="groupSelect">
+                                            <option value="">Select a group</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3" id="individualTargetDiv" style="display: none;">
+                                        <label class="form-label">Target Number</label>
+                                        <input type="text" class="form-control" id="individualTarget" placeholder="e.g., 919876543210">
+                                        <div class="form-text">With country code, without +</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Message File</label>
+                                        <input type="file" class="form-control" id="messageFile" accept=".txt" required>
+                                        <div class="form-text">Text file with one message per line</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Delay (seconds)</label>
+                                        <input type="number" class="form-control" id="delaySec" value="2" min="1" required>
+                                        <div class="form-text">Delay between messages in seconds</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Message Prefix (Optional)</label>
+                                        <input type="text" class="form-control" id="prefix" placeholder="e.g., Hello,">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-whatsapp w-100">
+                                        <i class="fas fa-paper-plane"></i> Start Sending Messages
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <div class="card">
                             <div class="card-header">
-                                <i class="fas fa-eye me-2"></i>Message Preview
+                                <i class="fas fa-rocket"></i> Quick Start Task
                             </div>
                             <div class="card-body">
-                                <div id="filePreview">
-                                    <div class="text-muted text-center py-3">
-                                        <i class="fas fa-file-alt fa-2x mb-2"></i>
-                                        <p>No file selected</p>
-                                        <small>Upload a messages file to see preview</small>
-                                    </div>
-                                </div>
+                                <div id="taskStartResult"></div>
                             </div>
                         </div>
 
                         <div class="card mt-3">
                             <div class="card-header">
-                                <i class="fas fa-info-circle me-2"></i>Sending Status
+                                <i class="fas fa-info-circle"></i> Instructions
                             </div>
                             <div class="card-body">
-                                <div id="sendStatus">
-                                    <div class="text-center text-muted py-2">
-                                        <p>Ready to send messages</p>
-                                    </div>
-                                </div>
+                                <h6>📝 Message File Format:</h6>
+                                <ul class="small">
+                                    <li>Create a .txt file</li>
+                                    <li>One message per line</li>
+                                    <li>No empty lines</li>
+                                    <li>Max 10,000 messages</li>
+                                </ul>
+                                
+                                <h6>⏰ Recommended Delays:</h6>
+                                <ul class="small">
+                                    <li>Groups: 3-5 seconds</li>
+                                    <li>Individuals: 1-2 seconds</li>
+                                    <li>Avoid rate limits</li>
+                                </ul>
+                                
+                                <h6>🛑 Stopping Tasks:</h6>
+                                <p class="small">Go to Active Tasks tab to stop any running task</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tasks Tab -->
+            <!-- Active Tasks Tab -->
             <div class="tab-pane fade" id="tasks" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tasks"></i> Active Tasks</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadUserTasks()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="tasksList">
+                            <p class="text-muted text-center">No active tasks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-tasks me-2"></i>Your Message Tasks</span>
-                                <button class="refresh-btn" onclick="loadUserTasks()" title="Refresh Tasks">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
+                            <div class="card-header">
+                                <i class="fas fa-user"></i> User Management
                             </div>
                             <div class="card-body">
-                                <div id="tasksList">
-                                    <div class="text-center text-muted py-5">
-                                        <i class="fas fa-tasks fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
-                                        <p>No active message tasks</p>
-                                        <small class="text-muted">Your message sending tasks will appear here</small>
-                                    </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Your User ID</label>
+                                    <input type="text" class="form-control" id="statsUserId" placeholder="Enter your user ID">
                                 </div>
+                                <button class="btn btn-whatsapp w-100" onclick="loadUserStats()">
+                                    <i class="fas fa-chart-bar"></i> Get Stats
+                                </button>
+                                <div id="userStats" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-trash"></i> Cleanup
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    This will delete all your sessions and tasks
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Your User ID</label>
+                                    <input type="text" class="form-control" id="cleanupUserId" placeholder="Enter your user ID">
+                                </div>
+                                <button class="btn btn-danger w-100" onclick="cleanupSessions()">
+                                    <i class="fas fa-trash"></i> Cleanup All My Sessions
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="fas fa-heartbeat"></i> System Health
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-outline-info w-100" onclick="checkHealth()">
+                                    <i class="fas fa-stethoscope"></i> Check System Health
+                                </button>
+                                <div id="healthStatus" class="mt-3"></div>
                             </div>
                         </div>
                     </div>
@@ -510,569 +475,404 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
     <script>
-        // Global variables
-        let currentSessionId = null;
-        let currentUserId = null;
+        // Configuration
+        const API_BASE = window.location.origin;
+        let currentUserId = '';
+        let refreshIntervals = {};
 
-        // Initialize application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set user ID from input or generate random
-            const userIdInput = document.getElementById('userId');
-            const sendUserIdInput = document.getElementById('sendUserId');
-            
-            if (!userIdInput.value) {
-                const randomUserId = 'user_' + Math.floor(1000 + Math.random() * 9000);
-                userIdInput.value = randomUserId;
+        // Initialize
+        $(document).ready(function() {
+            console.log('🚀 WhatsApp Bulk Sender Initialized');
+            startUptimeCounter();
+            setInterval(updateStats, 10000); // Update stats every 10 seconds
+        });
+
+        // Uptime Counter
+        function startUptimeCounter() {
+            let seconds = 0;
+            setInterval(() => {
+                seconds++;
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                $('#uptime').text(`${hours}h ${minutes}m ${secs}s`);
+            }, 1000);
+        }
+
+        // Update Stats
+        async function updateStats() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                $('#totalSessions').text(data.stats.totalSessions || 0);
+                $('#totalTasks').text(data.stats.activeTasks || 0);
+                $('#totalMessages').text(data.stats.totalTasks || 0);
+            } catch (error) {
+                console.error('Stats update failed:', error);
             }
-            
-            sendUserIdInput.value = userIdInput.value;
-            currentUserId = userIdInput.value;
-            document.getElementById('currentUser').textContent = currentUserId;
-            
-            loadUserStats();
-            loadUserSessions();
-            
-            // Auto-refresh sessions every 30 seconds
-            setInterval(loadUserSessions, 30000);
-        });
+        }
 
-        // Update user ID across all inputs
-        document.getElementById('userId').addEventListener('change', function() {
-            const userId = this.value;
-            document.getElementById('sendUserId').value = userId;
-            document.getElementById('currentUser').textContent = userId;
-            currentUserId = userId;
-            loadUserStats();
-            loadUserSessions();
-        });
-
-        // Pair new WhatsApp number
-        async function pairNumber() {
-            const userId = document.getElementById('userId').value;
-            const phoneNumber = document.getElementById('phoneNumber').value;
+        // Pair New Number
+        $('#pairForm').on('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = $('#userId').val().trim();
+            const phoneNumber = $('#phoneNumber').val().replace(/[^0-9]/g, '');
             
             if (!userId || !phoneNumber) {
-                showAlert('Please enter both User ID and Phone Number', 'warning');
+                alert('Please fill all fields');
                 return;
             }
-
-            document.getElementById('qrCard').style.display = 'block';
-            document.getElementById('pairingStatus').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting pairing code...';
-
-            const pairButton = document.getElementById('pairButton');
-            pairButton.disabled = true;
-            pairButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
-
+            
+            currentUserId = userId;
+            
             try {
-                const response = await fetch(`/code?number=${phoneNumber}&userId=${userId}`);
+                const response = await fetch(`${API_BASE}/code?number=${phoneNumber}&userId=${userId}`);
                 const data = await response.json();
                 
                 if (data.error) {
-                    showAlert('Error: ' + data.error, 'danger');
-                    pairButton.disabled = false;
-                    pairButton.innerHTML = '<i class="fas fa-link me-2"></i>Connect WhatsApp';
+                    alert('Error: ' + data.error);
                     return;
                 }
-
-                if (data.status === 'already-registered') {
-                    document.getElementById('pairingStatus').innerHTML = 
-                        '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Session already registered and ready to use!</div>';
-                    document.getElementById('qrContainer').innerHTML = '<div class="alert alert-info p-4">Already Connected</div>';
-                    showAlert('WhatsApp session is already connected and ready!', 'success');
-                    loadUserSessions();
-                } else if (data.waCode) {
-                    if (data.waCode.length === 8) {
-                        // 8-digit code
-                        document.getElementById('pairingStatus').innerHTML = 
-                            '<div class="alert alert-info"><i class="fas fa-key me-2"></i>Use this 8-digit code in WhatsApp: <strong>' + data.waCode + '</strong></div>';
-                        document.getElementById('qrContainer').innerHTML = `
-                            <div class="p-4 bg-light rounded">
-                                <div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 8px; color: #25D366;">
-                                    ${data.waCode}
-                                </div>
-                                <small class="text-muted">Enter this code in WhatsApp Linked Devices</small>
-                            </div>
-                        `;
-                    } else {
-                        // QR code
-                        document.getElementById('pairingStatus').innerHTML = 
-                            '<div class="alert alert-info"><i class="fas fa-qrcode me-2"></i>Scan the QR code with WhatsApp</div>';
-                        document.getElementById('qrContainer').innerHTML = `
-                            <div class="p-4 bg-light rounded">
-                                <div style="font-family: monospace; font-weight: bold; word-break: break-all; font-size: 14px;">
-                                    ${data.waCode}
-                                </div>
-                                <small class="text-muted">Scan this code with WhatsApp</small>
-                            </div>
-                        `;
-                    }
-                    
-                    currentSessionId = data.sessionId;
-                    showAlert('Pairing code received. Please complete the pairing process in WhatsApp.', 'info');
-                    
-                    // Check connection status periodically
-                    checkConnectionStatus(data.sessionId, userId);
-                }
-
+                
+                $('#pairingCode').text(data.pairingCode);
+                $('#pairingMessage').text(data.message);
+                $('#sessionIdDisplay').text(data.sessionId);
+                $('#pairingWaiting').hide();
+                $('#pairingResult').show();
+                
+                // Load sessions after pairing
+                loadUserSessions();
+                
             } catch (error) {
-                showAlert('Connection error: ' + error.message, 'danger');
-            } finally {
-                pairButton.disabled = false;
-                pairButton.innerHTML = '<i class="fas fa-link me-2"></i>Connect WhatsApp';
+                alert('Connection failed: ' + error.message);
             }
-        }
+        });
 
-        // Check connection status
-        async function checkConnectionStatus(sessionId, userId) {
-            setTimeout(async () => {
-                try {
-                    const response = await fetch(`/user-sessions?userId=${userId}`);
-                    const data = await response.json();
-                    
-                    const session = data.sessions.find(s => s.sessionId === sessionId);
-                    if (session && session.registered) {
-                        document.getElementById('pairingStatus').innerHTML = 
-                            '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>WhatsApp connected successfully!</div>';
-                        showAlert('WhatsApp connected successfully! You can now send messages.', 'success');
-                        loadUserSessions();
-                    } else {
-                        checkConnectionStatus(sessionId, userId);
-                    }
-                } catch (error) {
-                    console.error('Error checking connection:', error);
-                }
-            }, 3000);
-        }
-
-        // Hide QR card
-        function hideQR() {
-            document.getElementById('qrCard').style.display = 'none';
-            loadUserSessions();
-        }
-
-        // Load user sessions
+        // Load User Sessions
         async function loadUserSessions() {
-            const userId = document.getElementById('userId').value;
-            if (!userId) return;
-
+            const userId = $('#userId').val().trim() || currentUserId;
+            if (!userId) {
+                alert('Please enter User ID first');
+                return;
+            }
+            
             try {
-                const response = await fetch(`/user-sessions?userId=${userId}`);
+                const response = await fetch(`${API_BASE}/user-sessions?userId=${userId}`);
                 const data = await response.json();
                 
-                const sessionsList = document.getElementById('sessionsList');
-                const sessionSelect = document.getElementById('sessionSelect');
-                
-                sessionSelect.innerHTML = '<option value="">-- Select Session --</option>';
-                
-                if (data.sessions.length === 0) {
-                    sessionsList.innerHTML = `
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-mobile-alt fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
-                            <p>No WhatsApp sessions connected yet</p>
-                            <small class="text-muted">Connect your first WhatsApp account to get started</small>
-                        </div>
-                    `;
+                if (data.error) {
+                    $('#sessionsList').html('<p class="text-danger">Error: ' + data.error + '</p>');
                     return;
                 }
-
-                let sessionsHTML = '';
+                
+                if (data.sessions.length === 0) {
+                    $('#sessionsList').html('<p class="text-muted text-center">No active sessions</p>');
+                    updateSessionDropdowns([]);
+                    return;
+                }
+                
+                let html = '';
                 data.sessions.forEach(session => {
-                    const statusClass = session.registered ? 
-                        (session.isConnecting ? 'status-connecting' : 'status-connected') : 
-                        'status-disconnected';
+                    const statusClass = session.registered ? 'status-connected' : 'status-disconnected';
+                    const statusText = session.registered ? 'Connected' : 'Disconnected';
                     
-                    const statusText = session.registered ? 
-                        (session.isConnecting ? 'Connecting...' : 'Connected') : 
-                        'Disconnected';
-
-                    sessionsHTML += `
-                        <div class="card mb-3 session-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="card-title d-flex align-items-center">
-                                            <i class="fab fa-whatsapp me-2 text-success"></i>
-                                            ${session.number}
-                                        </h6>
-                                        <p class="card-text mb-1">
-                                            <span class="${statusClass}">
-                                                <i class="fas fa-circle me-1" style="font-size: 0.7rem;"></i>${statusText}
-                                            </span>
-                                            ${session.registered ? `• ${session.totalGroups} groups available` : ''}
-                                        </p>
-                                        <small class="text-muted">Session ID: ${session.sessionId}</small>
-                                        ${session.deviceInfo ? `
-                                            <div class="mt-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    Connected: ${new Date(session.deviceInfo.pairedAt).toLocaleString()}
-                                                </small>
-                                            </div>
-                                        ` : ''}
+                    html += `
+                        <div class="card session-card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${session.number}</h6>
+                                        <small class="text-muted">Session: ${session.sessionId}</small>
+                                        <br>
+                                        <span class="${statusClass}">
+                                            <i class="fas fa-circle"></i> ${statusText}
+                                        </span>
                                     </div>
-                                    <div class="d-flex">
-                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshGroups('${session.sessionId}')" title="Refresh Groups">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.sessionId}')" title="Delete Session">
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.sessionId}')">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </div>
+                                ${session.registered ? `
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users"></i> ${session.totalGroups} groups | 
+                                            <i class="fas fa-clock"></i> ${new Date(session.pairedAt).toLocaleString()}
+                                        </small>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
-
-                    // Add to session select dropdown
-                    const option = document.createElement('option');
-                    option.value = session.sessionId;
-                    option.textContent = `${session.number} (${session.totalGroups} groups)`;
-                    sessionSelect.appendChild(option);
-                });
-
-                sessionsList.innerHTML = sessionsHTML;
-                loadUserStats();
-
-            } catch (error) {
-                console.error('Error loading sessions:', error);
-            }
-        }
-
-        // Refresh groups for a session
-        async function refreshGroups(sessionId) {
-            const userId = document.getElementById('userId').value;
-            
-            try {
-                const response = await fetch('/refresh-groups', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `sessionId=${sessionId}&userId=${userId}`
                 });
                 
-                const data = await response.json();
-                if (data.success) {
-                    showAlert(`Successfully refreshed ${data.total} groups`, 'success');
-                    loadUserSessions();
-                } else {
-                    showAlert('Error refreshing groups: ' + data.error, 'danger');
-                }
-            } catch (error) {
-                console.error('Error refreshing groups:', error);
-                showAlert('Error refreshing groups', 'danger');
-            }
-        }
-
-        // Delete session
-        async function deleteSession(sessionId) {
-            const userId = document.getElementById('userId').value;
-            
-            if (!confirm('Are you sure you want to delete this WhatsApp session? This will disconnect the device.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/delete-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `sessionId=${sessionId}&userId=${userId}`
-                });
+                $('#sessionsList').html(html);
+                updateSessionDropdowns(data.sessions);
                 
-                const data = await response.json();
-                if (data.success) {
-                    showAlert('WhatsApp session deleted successfully', 'success');
-                    loadUserSessions();
-                } else {
-                    showAlert('Error deleting session: ' + data.error, 'danger');
-                }
             } catch (error) {
-                console.error('Error deleting session:', error);
-                showAlert('Error deleting session', 'danger');
+                $('#sessionsList').html('<p class="text-danger">Failed to load sessions</p>');
             }
         }
 
-        // Toggle target input based on type
-        function toggleTargetInput() {
-            const targetType = document.getElementById('targetType').value;
-            const individualDiv = document.getElementById('individualTargetDiv');
-            const groupDiv = document.getElementById('groupTargetDiv');
+        // Update Session Dropdowns
+        function updateSessionDropdowns(sessions) {
+            const connectedSessions = sessions.filter(s => s.registered);
             
-            if (targetType === 'individual') {
-                individualDiv.style.display = 'block';
-                groupDiv.style.display = 'none';
-            } else {
-                individualDiv.style.display = 'none';
-                groupDiv.style.display = 'block';
-                loadGroupsForSession();
-            }
+            // Update all session dropdowns
+            $('#sessionSelect, #groupsSessionSelect').html(`
+                <option value="">Select a connected session</option>
+                ${connectedSessions.map(s => 
+                    `<option value="${s.sessionId}">${s.number} (${s.sessionId})</option>`
+                ).join('')}
+            `);
         }
 
-        // Load groups when session is selected
-        document.getElementById('sessionSelect').addEventListener('change', function() {
-            loadGroupsForSession();
-        });
-
-        // Load groups for selected session
-        async function loadGroupsForSession() {
-            const sessionId = document.getElementById('sessionSelect').value;
-            const userId = document.getElementById('sendUserId').value;
-            const groupsList = document.getElementById('groupsList');
+        // Load Groups
+        async function loadGroups() {
+            const sessionId = $('#groupsSessionSelect').val();
+            const userId = $('#userId').val().trim() || currentUserId;
             
-            if (!sessionId) {
-                groupsList.innerHTML = '<div class="text-center text-muted py-3"><p>Select a session first</p></div>';
+            if (!sessionId || !userId) {
+                alert('Please select session and enter User ID');
                 return;
             }
-
+            
             try {
-                const response = await fetch(`/groups?sessionId=${sessionId}&userId=${userId}`);
+                const response = await fetch(`${API_BASE}/groups?sessionId=${sessionId}&userId=${userId}`);
                 const data = await response.json();
                 
                 if (data.error) {
-                    groupsList.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    $('#groupsList').html('<div class="alert alert-danger">' + data.error + '</div>');
                     return;
                 }
-
-                if (data.groups.length === 0) {
-                    groupsList.innerHTML = '<div class="text-center text-muted py-3"><p>No groups found</p></div>';
-                    return;
-                }
-
-                let groupsHTML = '';
-                data.groups.forEach(group => {
-                    groupsHTML += `
-                        <div class="group-item" onclick="selectGroup(this, '${group.id}')">
-                            <strong>${group.name}</strong>
-                            <br>
-                            <small class="text-muted">${group.participants} participants • ${group.isAnnouncement ? 'Announcement Group' : 'Standard Group'}</small>
-                        </div>
-                    `;
-                });
-
-                groupsList.innerHTML = groupsHTML;
-
-            } catch (error) {
-                console.error('Error loading groups:', error);
-                groupsList.innerHTML = '<div class="alert alert-danger">Error loading groups</div>';
-            }
-        }
-
-        // Select group
-        function selectGroup(element, groupId) {
-            // Remove selected class from all groups
-            document.querySelectorAll('.group-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked group
-            element.classList.add('selected');
-            
-            // Store selected group ID
-            element.dataset.groupId = groupId;
-        }
-
-        // Preview file content
-        document.getElementById('messageFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('filePreview');
-            
-            if (!file) {
-                preview.innerHTML = `
-                    <div class="text-muted text-center py-3">
-                        <i class="fas fa-file-alt fa-2x mb-2"></i>
-                        <p>No file selected</p>
-                        <small>Upload a messages file to see preview</small>
-                    </div>
-                `;
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                const messages = content.split('\n').filter(msg => msg.trim());
                 
-                preview.innerHTML = `
-                    <h6>File Preview (${messages.length} messages):</h6>
-                    <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                        ${messages.map((msg, index) => `
-                            <div class="mb-2 p-2 bg-white rounded">
-                                <small class="text-muted">${index + 1}.</small> ${msg.substring(0, 100)}${msg.length > 100 ? '...' : ''}
+                let html = '<h6>Your Groups:</h6>';
+                if (data.groups.length === 0) {
+                    html += '<p class="text-muted">No groups found</p>';
+                } else {
+                    data.groups.forEach(group => {
+                        html += `
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <h6 class="mb-1">${group.name}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-users"></i> ${group.participants} members | 
+                                        <i class="fas fa-lock"></i> ${group.isLocked ? 'Locked' : 'Open'}
+                                    </small>
+                                    <br>
+                                    <small><code>${group.id}</code></small>
+                                </div>
                             </div>
-                        `).join('')}
-                    </div>
-                    <div class="mt-2">
-                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Total messages: ${messages.length}</small>
-                    </div>
-                `;
-            };
-            reader.readAsText(file);
+                        `;
+                    });
+                }
+                
+                $('#groupsList').html(html);
+                updateGroupDropdown(data.groups);
+                
+            } catch (error) {
+                $('#groupsList').html('<div class="alert alert-danger">Failed to load groups</div>');
+            }
+        }
+
+        // Update Group Dropdown
+        function updateGroupDropdown(groups) {
+            $('#groupSelect').html(`
+                <option value="">Select a group</option>
+                ${groups.map(g => 
+                    `<option value="${g.id}">${g.name} (${g.participants} members)</option>`
+                ).join('')}
+            `);
+        }
+
+        // Target Type Toggle
+        $('#targetType').on('change', function() {
+            if ($(this).val() === 'group') {
+                $('#groupTargetDiv').show();
+                $('#individualTargetDiv').hide();
+            } else {
+                $('#groupTargetDiv').hide();
+                $('#individualTargetDiv').show();
+            }
         });
 
-        // Start sending messages
-        async function startSending() {
-            const userId = document.getElementById('sendUserId').value;
-            const sessionId = document.getElementById('sessionSelect').value;
-            const targetType = document.getElementById('targetType').value;
-            const delaySec = document.getElementById('delaySeconds').value;
-            const prefix = document.getElementById('messagePrefix').value;
-            const fileInput = document.getElementById('messageFile');
+        // Send Messages
+        $('#sendForm').on('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = $('#sendUserId').val().trim();
+            const sessionId = $('#sessionSelect').val();
+            const targetType = $('#targetType').val();
+            const delaySec = $('#delaySec').val();
+            const prefix = $('#prefix').val();
+            const messageFile = $('#messageFile')[0].files[0];
             
             let target = '';
             let groupId = '';
-
-            if (targetType === 'individual') {
-                target = document.getElementById('targetNumber').value;
-                if (!target) {
-                    showAlert('Please enter target phone number', 'warning');
+            
+            if (targetType === 'group') {
+                groupId = $('#groupSelect').val();
+                if (!groupId) {
+                    alert('Please select a group');
                     return;
                 }
             } else {
-                const selectedGroup = document.querySelector('.group-item.selected');
-                if (!selectedGroup) {
-                    showAlert('Please select a WhatsApp group', 'warning');
+                target = $('#individualTarget').val();
+                if (!target) {
+                    alert('Please enter target number');
                     return;
                 }
-                groupId = selectedGroup.dataset.groupId;
-                target = groupId;
             }
-
-            if (!sessionId) {
-                showAlert('Please select a WhatsApp session', 'warning');
+            
+            if (!messageFile) {
+                alert('Please select message file');
                 return;
             }
-
-            if (!fileInput.files[0]) {
-                showAlert('Please select a messages file', 'warning');
-                return;
-            }
-
-            const sendButton = document.getElementById('sendButton');
-            sendButton.disabled = true;
-            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending Messages...';
-
+            
             const formData = new FormData();
+            formData.append('userId', userId);
             formData.append('sessionId', sessionId);
-            formData.append('target', target);
             formData.append('targetType', targetType);
             formData.append('delaySec', delaySec);
             formData.append('prefix', prefix);
-            formData.append('userId', userId);
-            formData.append('groupId', groupId);
-            formData.append('messageFile', fileInput.files[0]);
-
+            formData.append('messageFile', messageFile);
+            
+            if (target) formData.append('target', target);
+            if (groupId) formData.append('groupId', groupId);
+            
             try {
-                const response = await fetch('/send-message', {
+                const response = await fetch(`${API_BASE}/send-message`, {
                     method: 'POST',
                     body: formData
                 });
-
+                
                 const data = await response.json();
                 
-                if (data.success) {
-                    document.getElementById('sendStatus').innerHTML = `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>Message Task Started!</strong><br>
-                            Task ID: <code>${data.taskId}</code><br>
-                            Total Messages: ${data.totalMessages}<br>
-                            <div class="mt-2">
-                                <button class="btn btn-warning btn-sm" onclick="stopTask('${data.taskId}')">
-                                    <i class="fas fa-stop me-1"></i>Stop This Task
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Switch to tasks tab
-                    const tasksTab = new bootstrap.Tab(document.getElementById('tasks-tab'));
-                    tasksTab.show();
-                    
-                    loadUserTasks();
-                    
-                    // Monitor task progress
-                    monitorTaskProgress(data.taskId);
-                } else {
-                    document.getElementById('sendStatus').innerHTML = `
+                if (data.error) {
+                    $('#taskStartResult').html(`
                         <div class="alert alert-danger">
-                            <i class="fas fa-times-circle me-2"></i>
-                            Error: ${data.error}
+                            <i class="fas fa-times-circle"></i> ${data.error}
                         </div>
-                    `;
-                }
-
-            } catch (error) {
-                document.getElementById('sendStatus').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-times-circle me-2"></i>
-                        Error: ${error.message}
-                    </div>
-                `;
-            } finally {
-                sendButton.disabled = false;
-                sendButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Start Sending Messages';
-            }
-        }
-
-        // Monitor task progress
-        async function monitorTaskProgress(taskId) {
-            try {
-                const response = await fetch(`/task-status?taskId=${taskId}`);
-                const data = await response.json();
-                
-                if (data.status === 'sending') {
-                    document.getElementById('sendStatus').innerHTML = `
-                        <div class="alert alert-info">
-                            <i class="fas fa-sync-alt fa-spin me-2"></i>
-                            <strong>Sending Messages...</strong><br>
-                            Progress: ${data.sentMessages}/${data.totalMessages} (${data.progress}%)<br>
-                            <div class="progress mt-2">
-                                <div class="progress-bar" role="progressbar" style="width: ${data.progress}%;" 
-                                     aria-valuenow="${data.progress}" aria-valuemin="0" aria-valuemax="100">
-                                    ${data.progress}%
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <button class="btn btn-warning btn-sm" onclick="stopTask('${taskId}')">
-                                    <i class="fas fa-stop me-1"></i>Stop Task
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    setTimeout(() => monitorTaskProgress(taskId), 3000);
-                } else if (data.status === 'completed') {
-                    document.getElementById('sendStatus').innerHTML = `
+                    `);
+                } else {
+                    $('#taskStartResult').html(`
                         <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>Task Completed!</strong><br>
-                            Successfully sent ${data.sentMessages}/${data.totalMessages} messages
+                            <i class="fas fa-check-circle"></i> ${data.message}
+                            <br><br>
+                            <strong>Task ID:</strong> <code>${data.taskId}</code>
+                            <br>
+                            <strong>Messages:</strong> ${data.totalMessages}
+                            <br><br>
+                            <button class="btn btn-sm btn-whatsapp" onclick="loadUserTasks()">
+                                View in Active Tasks
+                            </button>
                         </div>
-                    `;
-                    loadUserTasks();
-                } else if (data.status === 'stopped') {
-                    document.getElementById('sendStatus').innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-stop-circle me-2"></i>
-                            <strong>Task Stopped</strong><br>
-                            Sent ${data.sentMessages}/${data.totalMessages} messages before stopping
-                        </div>
-                    `;
+                    `);
+                    
+                    // Reset form
+                    $('#sendForm')[0].reset();
                     loadUserTasks();
                 }
+                
             } catch (error) {
-                console.error('Error monitoring task:', error);
+                $('#taskStartResult').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> Failed to start task: ${error.message}
+                    </div>
+                `);
             }
-        }
+        });
 
-        // Stop task
-        async function stopTask(taskId) {
-            const userId = document.getElementById('sendUserId').value;
+        // Load User Tasks
+        async function loadUserTasks() {
+            const userId = $('#sendUserId').val().trim() || $('#userId').val().trim() || currentUserId;
+            if (!userId) return;
             
             try {
-                const response = await fetch('/stop-task', {
+                const response = await fetch(`${API_BASE}/user-tasks?userId=${userId}`);
+                const data = await response.json();
+                
+                if (data.error || data.tasks.length === 0) {
+                    $('#tasksList').html('<p class="text-muted text-center">No active tasks</p>');
+                    return;
+                }
+                
+                let html = '';
+                data.tasks.forEach(task => {
+                    const progress = task.progress || 0;
+                    const statusClass = task.isSending ? 'bg-success' : 'bg-warning';
+                    const statusText = task.isSending ? 'Running' : 'Completed';
+                    
+                    html += `
+                        <div class="card task-card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">${task.taskId}</h6>
+                                    <span class="badge ${statusClass}">${statusText}</span>
+                                </div>
+                                
+                                <div class="progress mb-2">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${progress}%" 
+                                         aria-valuenow="${progress}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        ${progress}%
+                                    </div>
+                                </div>
+                                
+                                <div class="row text-center">
+                                    <div class="col">
+                                        <small>Sent</small>
+                                        <br>
+                                        <strong>${task.sentMessages}/${task.totalMessages}</strong>
+                                    </div>
+                                    <div class="col">
+                                        <small>Progress</small>
+                                        <br>
+                                        <strong>${progress}%</strong>
+                                    </div>
+                                    <div class="col">
+                                        <small>Status</small>
+                                        <br>
+                                        <strong>${statusText}</strong>
+                                    </div>
+                                </div>
+                                
+                                ${task.isSending ? `
+                                    <div class="mt-3">
+                                        <button class="btn btn-sm btn-danger w-100" 
+                                                onclick="stopTask('${task.taskId}')">
+                                            <i class="fas fa-stop"></i> Stop Task
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                $('#tasksList').html(html);
+                
+            } catch (error) {
+                $('#tasksList').html('<p class="text-danger">Failed to load tasks</p>');
+            }
+        }
+
+        // Stop Task
+        async function stopTask(taskId) {
+            const userId = $('#sendUserId').val().trim() || $('#userId').val().trim() || currentUserId;
+            
+            if (!confirm('Are you sure you want to stop this task?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/stop-task`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1081,146 +881,184 @@
                 });
                 
                 const data = await response.json();
+                
                 if (data.success) {
-                    showAlert('Message task stopped successfully', 'warning');
+                    alert('Task stopped successfully');
                     loadUserTasks();
-                    document.getElementById('sendStatus').innerHTML = `
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Task stopped. Sent ${data.sentMessages}/${data.totalMessages} messages.
-                        </div>
-                    `;
                 } else {
-                    showAlert('Error stopping task: ' + data.error, 'danger');
+                    alert('Error: ' + data.error);
                 }
+                
             } catch (error) {
-                console.error('Error stopping task:', error);
-                showAlert('Error stopping task', 'danger');
+                alert('Failed to stop task: ' + error.message);
             }
         }
 
-        // Load user tasks
-        async function loadUserTasks() {
-            const userId = document.getElementById('userId').value;
-            if (!userId) return;
-
+        // Delete Session
+        async function deleteSession(sessionId) {
+            const userId = $('#userId').val().trim() || currentUserId;
+            
+            if (!confirm('Are you sure you want to delete this session?')) return;
+            
             try {
-                const response = await fetch(`/user-tasks?userId=${userId}`);
+                const response = await fetch(`${API_BASE}/delete-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `sessionId=${sessionId}&userId=${userId}`
+                });
+                
                 const data = await response.json();
                 
-                const tasksList = document.getElementById('tasksList');
+                if (data.success) {
+                    alert('Session deleted successfully');
+                    loadUserSessions();
+                } else {
+                    alert('Error: ' + data.error);
+                }
                 
-                if (data.tasks.length === 0) {
-                    tasksList.innerHTML = `
-                        <div class="text-center text-muted py-5">
-                            <i class="fas fa-tasks fa-3x mb-3 text-light" style="color: #e9ecef !important;"></i>
-                            <p>No active message tasks</p>
-                            <small class="text-muted">Your message sending tasks will appear here</small>
-                        </div>
-                    `;
+            } catch (error) {
+                alert('Failed to delete session: ' + error.message);
+            }
+        }
+
+        // Load User Stats
+        async function loadUserStats() {
+            const userId = $('#statsUserId').val().trim();
+            if (!userId) {
+                alert('Please enter User ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/user-stats?userId=${userId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    $('#userStats').html('<div class="alert alert-danger">' + data.error + '</div>');
                     return;
                 }
-
-                let tasksHTML = '';
-                data.tasks.forEach(task => {
-                    const statusClass = task.isSending ? 'status-connecting' : 'status-connected';
-                    const statusText = task.isSending ? 'Sending...' : 'Completed';
-                    const statusIcon = task.isSending ? 'fa-sync-alt fa-spin' : 'fa-check-circle';
-                    
-                    tasksHTML += `
-                        <div class="card mb-3 task-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="flex-grow-1">
-                                        <h6 class="card-title d-flex align-items-center">
-                                            <i class="fas fa-tasks me-2 text-primary"></i>
-                                            Task: ${task.taskId}
-                                        </h6>
-                                        <p class="card-text mb-2">
-                                            <span class="${statusClass}">
-                                                <i class="fas ${statusIcon} me-1"></i>${statusText}
-                                            </span> 
-                                            • Progress: ${task.sentMessages}/${task.totalMessages} messages
-                                        </p>
-                                        <div class="progress mb-2" style="width: 100%; max-width: 300px;">
-                                            <div class="progress-bar" role="progressbar" style="width: ${task.progress}%;" 
-                                                 aria-valuenow="${task.progress}" aria-valuemin="0" aria-valuemax="100">
-                                                ${task.progress}%
-                                            </div>
-                                        </div>
-                                        <small class="text-muted">
-                                            <i class="fas fa-clock me-1"></i>
-                                            Started: ${new Date(task.startTime).toLocaleString()}
-                                        </small>
-                                    </div>
-                                    ${task.isSending ? `
-                                        <div>
-                                            <button class="btn btn-warning btn-sm" onclick="stopTask('${task.taskId}')">
-                                                <i class="fas fa-stop me-1"></i>Stop
-                                            </button>
-                                        </div>
-                                    ` : ''}
-                                </div>
+                
+                const stats = data.stats;
+                $('#userStats').html(`
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-user"></i> User Statistics</h6>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <strong>${stats.totalSessions}</strong>
+                                <br>
+                                <small>Sessions</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>${stats.activeSessions}</strong>
+                                <br>
+                                <small>Active</small>
                             </div>
                         </div>
-                    `;
-                });
-
-                tasksList.innerHTML = tasksHTML;
-                loadUserStats();
-
+                        <div class="row text-center mt-2">
+                            <div class="col-6">
+                                <strong>${stats.totalTasks}</strong>
+                                <br>
+                                <small>Total Tasks</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>${stats.totalMessagesSent}</strong>
+                                <br>
+                                <small>Messages Sent</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <small>
+                            <i class="fas fa-calendar"></i> User since: ${new Date(stats.userSince).toLocaleDateString()}
+                            <br>
+                            <i class="fas fa-clock"></i> Last active: ${new Date(stats.lastActive).toLocaleString()}
+                        </small>
+                    </div>
+                `);
+                
             } catch (error) {
-                console.error('Error loading tasks:', error);
+                $('#userStats').html('<div class="alert alert-danger">Failed to load stats</div>');
             }
         }
 
-        // Load user stats
-        async function loadUserStats() {
-            const userId = document.getElementById('userId').value;
-            if (!userId) return;
-
+        // Cleanup Sessions
+        async function cleanupSessions() {
+            const userId = $('#cleanupUserId').val().trim();
+            if (!userId) {
+                alert('Please enter User ID');
+                return;
+            }
+            
+            if (!confirm('This will delete ALL your sessions and tasks. Continue?')) return;
+            
             try {
-                const response = await fetch(`/user-stats?userId=${userId}`);
+                const response = await fetch(`${API_BASE}/cleanup-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `sessionId=all&userId=${userId}`
+                });
+                
                 const data = await response.json();
                 
-                document.getElementById('totalSessions').textContent = data.stats.activeSessions;
-                document.getElementById('activeTasks').textContent = data.stats.activeTasks;
-                document.getElementById('totalMessages').textContent = data.stats.totalMessagesSent;
-                document.getElementById('userSince').textContent = new Date(data.stats.userSince).toLocaleDateString();
-
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        // Show alert message
-        function showAlert(message, type) {
-            // Create alert element
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            // Add to page (you can customize where to show alerts)
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentElement) {
-                    alertDiv.remove();
+                if (data.success) {
+                    alert('Cleanup completed: ' + data.message);
+                    loadUserSessions();
+                    loadUserTasks();
+                } else {
+                    alert('Error: ' + data.error);
                 }
-            }, 5000);
+                
+            } catch (error) {
+                alert('Cleanup failed: ' + error.message);
+            }
         }
 
-        // Auto-refresh tasks every 10 seconds when on tasks tab
-        setInterval(() => {
-            if (document.getElementById('tasks-tab').classList.contains('active')) {
-                loadUserTasks();
+        // Check Health
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                $('#healthStatus').html(`
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> System Healthy</h6>
+                        <hr>
+                        <strong>Status:</strong> ${data.status}
+                        <br>
+                        <strong>Uptime:</strong> ${Math.round(data.uptime)} seconds
+                        <br>
+                        <strong>Memory:</strong> ${Math.round(data.memory.used / 1024 / 1024)}MB / ${Math.round(data.memory.total / 1024 / 1024)}MB
+                        <br>
+                        <strong>Users:</strong> ${data.stats.totalUsers}
+                        <br>
+                        <strong>Sessions:</strong> ${data.stats.totalSessions}
+                        <br>
+                        <strong>Tasks:</strong> ${data.stats.totalTasks}
+                    </div>
+                `);
+                
+            } catch (error) {
+                $('#healthStatus').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> Health check failed: ${error.message}
+                    </div>
+                `);
             }
-        }, 10000);
+        }
+
+        // Auto-refresh when switching to tasks tab
+        $('#tasks-tab').on('click', function() {
+            loadUserTasks();
+        });
+
+        // Auto-refresh when switching to sessions tab  
+        $('#sessions-tab').on('click', function() {
+            loadUserSessions();
+        });
     </script>
 </body>
 </html>
