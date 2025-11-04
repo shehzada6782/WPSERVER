@@ -1,4 +1,4 @@
-// index.js (UNLIMITED UPTIME FIXED VERSION)
+// index.js (ERROR FIXED VERSION)
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -11,7 +11,8 @@ const {
     Browsers,
     fetchLatestBaileysVersion,
     makeWASocket,
-    isJidBroadcast
+    isJidBroadcast,
+    DisconnectReason
 } = require("@whiskeysockets/baileys");
 
 const app = express();
@@ -23,10 +24,28 @@ if (!fs.existsSync("uploads")) fs.mkdirSync("uploads", { recursive: true });
 if (!fs.existsSync("public")) fs.mkdirSync("public", { recursive: true });
 
 // Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + '.txt');
+    }
+});
+
 const upload = multer({ 
-    dest: "uploads/",
+    storage: storage,
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'text/plain' || file.originalname.endsWith('.txt')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only text files are allowed'), false);
+        }
     }
 });
 
@@ -91,242 +110,230 @@ setInterval(() => {
     });
 }, 60 * 60 * 1000); // Run every hour
 
-// --- HEARTBEAT SYSTEM FOR UNLIMITED UPTIME ---
-function startHeartbeat(sessionId, sessionInfo) {
-    if (sessionInfo.heartbeatInterval) {
-        clearInterval(sessionInfo.heartbeatInterval);
-    }
+// --- FIXED PAIR NEW NUMBER ---
+app.get("/code", async (req, res) => {
+    const num = req.query.number?.replace(/[^0-9]/g, "");
+    const userId = req.query.userId;
     
-    sessionInfo.heartbeatInterval = setInterval(async () => {
-        try {
-            if (sessionInfo.client && sessionInfo.registered) {
-                // Send a small ping message to keep connection alive
-                const user = sessionInfo.client.user;
-                if (user && user.id) {
-                    // This keeps the connection active without sending actual messages
-                    await sessionInfo.client.sendPresenceUpdate('available');
-                    
-                    // Refresh connection every 30 minutes
-                    if (sessionInfo.lastHeartbeat) {
-                        const timeSinceLastHeartbeat = Date.now() - sessionInfo.lastHeartbeat;
-                        if (timeSinceLastHeartbeat > 30 * 60 * 1000) {
-                            console.log(`❤️ Heartbeat active for ${sessionId} - Connection stable`);
-                        }
-                    }
-                    sessionInfo.lastHeartbeat = Date.now();
-                }
-            }
-        } catch (error) {
-            console.log(`⚠️ Heartbeat failed for ${sessionId}:`, error.message);
-            // Attempt to reconnect if heartbeat fails
-            if (sessionInfo.client) {
-                try {
-                    await sessionInfo.client.sendPresenceUpdate('available');
-                } catch (reconnectError) {
-                    console.log(`🔌 Attempting to reconnect ${sessionId}...`);
-                    initializeClient(sessionId, sessionInfo);
-                }
-            }
+    if (!num) return res.status(400).json({ error: "Invalid number" });
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+    const sessionId = `session_${num}_${userId}`;
+    const sessionPath = path.join("temp", sessionId);
+    
+    const existingSession = activeClients.get(sessionId);
+    if (existingSession) {
+        if (existingSession.isConnecting) {
+            return res.status(400).json({ error: "Session is already being set up. Please wait." });
         }
-    }, 60000); // Send heartbeat every 1 minute
-    
-    console.log(`❤️ Heartbeat started for session: ${sessionId}`);
-}
-
-// --- AUTO-RECONNECTION SYSTEM ---
-function setupAutoReconnection(sessionId, sessionInfo) {
-    if (sessionInfo.reconnectTimeout) {
-        clearTimeout(sessionInfo.reconnectTimeout);
+        if (existingSession.registered) {
+            return res.json({ 
+                pairingCode: existingSession.pairingCode || "CONNECTED",
+                waCode: "ALREADY_CONNECTED", 
+                sessionId: sessionId,
+                status: "already-registered",
+                message: "Session already registered and ready to use",
+                deviceInfo: existingSession.deviceInfo,
+                groups: existingSession.groups || [],
+                totalGroups: existingSession.groups ? existingSession.groups.length : 0
+            });
+        }
     }
-    
-    sessionInfo.autoReconnect = true;
-    sessionInfo.reconnectAttempts = 0;
-    sessionInfo.maxReconnectAttempts = 50; // Increased from 3 to 50
-    
-    console.log(`🔄 Auto-reconnection enabled for: ${sessionId}`);
-}
 
-// --- IMPROVED CLIENT INITIALIZATION WITH BETTER UPTIME ---
-async function initializeClient(sessionId, sessionInfo, isReconnect = false) {
+    // Create user session if it doesn't exist
+    getUserSession(userId);
+
+    if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
+
     try {
-        const { state, saveCreds } = await useMultiFileAuthState(sessionInfo.authPath);
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
         const { version } = await fetchLatestBaileysVersion();
 
-        // ✅ ENHANCED CONNECTION SETTINGS FOR UNLIMITED UPTIME
+        if (state.creds?.registered) {
+            const displayCode = generateDisplayCode();
+            
+            const sessionInfo = {
+                client: null,
+                number: num,
+                authPath: sessionPath,
+                registered: true,
+                pairingCode: displayCode,
+                ownerId: userId,
+                isConnecting: false,
+                deviceInfo: {
+                    platform: "WhatsApp Web",
+                    pairedAt: new Date().toISOString(),
+                    browser: "Chrome"
+                },
+                pairedAt: new Date(),
+                groups: [],
+                groupsLastFetched: null
+            };
+            
+            activeClients.set(sessionId, sessionInfo);
+            
+            return res.json({ 
+                pairingCode: displayCode,
+                waCode: "ALREADY_REGISTERED", 
+                sessionId: sessionId,
+                status: "already-registered",
+                message: "Session already registered and ready to use",
+                deviceInfo: sessionInfo.deviceInfo,
+                groups: [],
+                totalGroups: 0
+            });
+        }
+
+        // ✅ FIXED: Simplified connection without complex QR parsing
         const waClient = makeWASocket({
             version,
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }))
             },
-            printQRInTerminal: false,
-            logger: pino({ level: "silent" }),
+            printQRInTerminal: true,
+            logger: pino({ level: "error" }), // Changed from silent to error for debugging
             browser: Browsers.ubuntu('Chrome'),
             syncFullHistory: false,
-            markOnlineOnConnect: true,
+            markOnlineOnConnect: false,
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             
-            // ✅ ENHANCED UPTIME SETTINGS
-            keepAliveIntervalMs: 10000,           // Keep alive every 10 seconds
-            emitOwnEvents: true,
-            retryRequestDelayMs: 1000,           // Faster retry
-            maxRetries: 15,                      // More retries
-            fireInitQueries: true,               // Important for stability
-            transactionOpts: {
-                maxRetries: 15,                  // More transaction retries
-                delayInMs: 1000                  // Faster retry delay
-            },
-            
-            // ✅ ADDED FOR BETTER CONNECTION STABILITY
-            generateHighQualityLinkPreview: true,
-            getMessage: async () => undefined,
-            patchMessageBeforeSending: (message) => {
-                const requires = message.ephemeralMessage ? message.ephemeralMessage : message;
-                if (requires.contextInfo) {
-                    requires.contextInfo.mentionedJid = null;
-                    requires.contextInfo.groupMentions = null;
-                }
-                return message;
-            }
+            // ✅ FIXED: Better connection settings
+            keepAliveIntervalMs: 10000,
+            emitOwnEvents: false, // Changed to false to avoid conflicts
+            retryRequestDelayMs: 1000,
+            maxRetries: 5,
+            fireInitQueries: false
         });
 
-        sessionInfo.client = waClient;
-        sessionInfo.isConnecting = true;
+        const displayCode = generateDisplayCode();
+        const sessionInfo = {
+            client: waClient,
+            number: num,
+            authPath: sessionPath,
+            registered: false,
+            pairingCode: displayCode,
+            ownerId: userId,
+            isConnecting: true,
+            reconnectAttempts: 0,
+            maxReconnectAttempts: 3,
+            deviceInfo: null,
+            pairedAt: null,
+            groups: [],
+            groupsLastFetched: null
+        };
 
-        // Start heartbeat system for this session
-        startHeartbeat(sessionId, sessionInfo);
-        
-        // Setup auto-reconnection
-        setupAutoReconnection(sessionId, sessionInfo);
+        activeClients.set(sessionId, sessionInfo);
+
+        let connectionTimeout;
+        let isResolved = false;
+
+        const resolveRequest = (data) => {
+            if (isResolved) return;
+            isResolved = true;
+            clearTimeout(connectionTimeout);
+            sessionInfo.isConnecting = false;
+            res.json(data);
+        };
+
+        const rejectRequest = (error) => {
+            if (isResolved) return;
+            isResolved = true;
+            clearTimeout(connectionTimeout);
+            sessionInfo.isConnecting = false;
+            res.status(500).json({ error });
+        };
+
+        connectionTimeout = setTimeout(() => {
+            if (!isResolved) {
+                console.log(`⏰ Connection timeout for ${sessionId}`);
+                rejectRequest("Connection timeout. Please try again.");
+            }
+        }, 120000);
 
         waClient.ev.on("creds.update", saveCreds);
         
         waClient.ev.on("connection.update", async (update) => {
-            const { connection, lastDisconnect, qr, isNewLogin, receivedPendingNotifications } = update;
+            const { connection, lastDisconnect, qr } = update;
             
-            console.log(`🔗 Connection update for user ${sessionInfo.ownerId}, session: ${sessionId}: ${connection}`);
+            console.log(`🔗 Connection update: ${connection}`);
             
             if (connection === "open") {
-                console.log(`✅ WhatsApp Connected for ${sessionInfo.number}! (User: ${sessionInfo.ownerId})`);
+                console.log(`✅ WhatsApp Connected for ${num}!`);
                 
-                // CAPTURE DEVICE INFO
                 try {
                     const user = waClient.user;
-                    sessionInfo.deviceInfo = {
+                    const deviceInfo = {
                         platform: user?.platform || "WhatsApp Web",
-                        pairedAt: sessionInfo.pairedAt || new Date().toISOString(),
+                        pairedAt: new Date().toISOString(),
                         browser: "Chrome",
-                        phoneNumber: user?.id?.split(':')[0] || sessionInfo.number,
+                        phoneNumber: user?.id?.split(':')[0] || num,
                         deviceType: "Browser",
-                        connection: isReconnect ? "Reconnected" : "Connected",
-                        lastSeen: new Date().toISOString()
+                        connection: "Active"
                     };
                     
-                    sessionInfo.pairedAt = sessionInfo.pairedAt || new Date();
+                    sessionInfo.deviceInfo = deviceInfo;
+                    sessionInfo.pairedAt = new Date();
                 } catch (deviceErr) {
                     console.log("⚠️ Could not capture device info:", deviceErr);
                 }
                 
-                // FETCH GROUPS ON CONNECTION
-                try {
-                    console.log(`📋 Fetching groups for session: ${sessionId}`);
-                    const groupData = await waClient.groupFetchAllParticipating();
-                    
-                    const groups = Object.values(groupData).map(group => ({
-                        id: group.id,
-                        name: group.subject || 'Unknown Group',
-                        participants: group.participants ? group.participants.length : 0,
-                        isAnnouncement: group.announcement || false,
-                        isLocked: group.locked || false
-                    })).sort((a, b) => a.name.localeCompare(b.name));
-                    
-                    sessionInfo.groups = groups;
-                    sessionInfo.groupsLastFetched = Date.now();
-                    console.log(`✅ Found ${groups.length} groups for ${sessionInfo.number}`);
-                } catch (groupError) {
-                    console.log("⚠️ Could not fetch groups:", groupError.message);
-                }
-                
                 sessionInfo.registered = true;
                 sessionInfo.isConnecting = false;
-                sessionInfo.reconnectAttempts = 0; // Reset on successful connection
+                sessionInfo.reconnectAttempts = 0;
                 
-                console.log(`🎯 Session ${sessionId} is now ACTIVE and STABLE`);
+                if (!isResolved) {
+                    resolveRequest({ 
+                        pairingCode: "CONNECTED",
+                        waCode: "CONNECTED",
+                        sessionId: sessionId,
+                        status: "connected",
+                        message: "WhatsApp connected successfully!",
+                        deviceInfo: sessionInfo.deviceInfo,
+                        groups: [],
+                        totalGroups: 0
+                    });
+                }
             } 
             else if (connection === "close") {
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const error = lastDisconnect?.error;
-                
-                console.log(`❌ Connection closed for user ${sessionInfo.ownerId}, session: ${sessionId}, status: ${statusCode}`);
+                console.log(`❌ Connection closed, status: ${statusCode}`);
                 
                 if (statusCode === 401) {
                     console.log(`🚫 Auth error for ${sessionId}`);
                     sessionInfo.registered = false;
                     sessionInfo.isConnecting = false;
-                    sessionInfo.deviceInfo = null;
-                    
-                    // Clear heartbeat
-                    if (sessionInfo.heartbeatInterval) {
-                        clearInterval(sessionInfo.heartbeatInterval);
-                    }
-                } else {
-                    // IMPROVED RECONNECTION LOGIC
-                    if (sessionInfo.autoReconnect && sessionInfo.reconnectAttempts < sessionInfo.maxReconnectAttempts) {
-                        sessionInfo.reconnectAttempts++;
-                        
-                        // Exponential backoff for reconnection attempts
-                        const delayMs = Math.min(5000 * Math.pow(1.5, sessionInfo.reconnectAttempts), 300000); // Max 5 minutes
-                        
-                        console.log(`🔄 Reconnection attempt ${sessionInfo.reconnectAttempts}/${sessionInfo.maxReconnectAttempts} for ${sessionId} in ${delayMs/1000}s...`);
-                        
-                        sessionInfo.reconnectTimeout = setTimeout(() => {
-                            if (activeClients.has(sessionId) && sessionInfo.autoReconnect) {
-                                console.log(`🔌 Attempting to reconnect ${sessionId}...`);
-                                initializeClient(sessionId, sessionInfo, true);
-                            }
-                        }, delayMs);
-                    } else {
-                        console.log(`🚫 Max reconnection attempts reached for ${sessionId}`);
-                        sessionInfo.isConnecting = false;
-                        
-                        if (sessionInfo.heartbeatInterval) {
-                            clearInterval(sessionInfo.heartbeatInterval);
-                        }
+                    if (!isResolved) {
+                        rejectRequest("Authentication failed. Please pair again.");
                     }
                 }
             }
             
-            // Handle QR code for new connections
-            if (qr && !sessionInfo.registered) {
-                console.log(`📱 QR code received for session: ${sessionId}`);
-                // ... (rest of your QR code logic remains same)
+            // ✅ FIXED: Simple QR handling without complex parsing
+            if (qr && !isResolved) {
+                console.log(`📱 QR code received`);
+                
+                resolveRequest({ 
+                    pairingCode: displayCode,
+                    waCode: qr,
+                    sessionId: sessionId,
+                    status: "qr_received", 
+                    message: "Scan the QR code with WhatsApp"
+                });
             }
         });
 
     } catch (err) {
-        console.error(`❌ Client initialization failed for ${sessionId}`, err);
-        sessionInfo.isConnecting = false;
-        
-        // Retry initialization after delay
-        if (sessionInfo.autoReconnect && sessionInfo.reconnectAttempts < sessionInfo.maxReconnectAttempts) {
-            sessionInfo.reconnectAttempts++;
-            const delayMs = Math.min(10000 * sessionInfo.reconnectAttempts, 120000);
-            
-            console.log(`🔄 Retrying initialization for ${sessionId} in ${delayMs/1000}s...`);
-            
-            sessionInfo.reconnectTimeout = setTimeout(() => {
-                if (activeClients.has(sessionId)) {
-                    initializeClient(sessionId, sessionInfo, true);
-                }
-            }, delayMs);
-        }
+        console.error("❌ Session creation error:", err);
+        activeClients.delete(sessionId);
+        return res.status(500).json({ error: "Server error: " + err.message });
     }
-}
+});
 
-// --- ENHANCED SEND MESSAGE WITH BETTER ERROR HANDLING ---
+// --- SIMPLIFIED SEND MESSAGE ---
 app.post("/send-message", upload.single("messageFile"), async (req, res) => {
-    const { sessionId, target, targetType, delaySec, prefix, userId, groupId } = req.body;
+    const { sessionId, target, targetType, delaySec, prefix, userId } = req.body;
     const filePath = req.file?.path;
 
     if (!sessionId || !activeClients.has(sessionId)) {
@@ -336,7 +343,6 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
     
     const sessionInfo = activeClients.get(sessionId);
     
-    // CHECK IF SESSION BELONGS TO THE USER
     if (userId && sessionInfo.ownerId !== userId) {
         safeDeleteFile(filePath);
         return res.status(403).json({ error: "Access denied. This session does not belong to you." });
@@ -347,52 +353,25 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         return res.status(400).json({ error: "Session not ready. Please wait for connection." });
     }
 
-    // ENHANCED SESSION RECOVERY
-    if (!sessionInfo.client && sessionInfo.registered) {
-        try {
-            console.log(`🔌 Reinitializing client for session: ${sessionId}`);
-            await initializeClient(sessionId, sessionInfo, true);
-            await delay(3000); // Wait for connection to establish
-            
-            if (!sessionInfo.client || sessionInfo.isConnecting) {
-                safeDeleteFile(filePath);
-                return res.status(400).json({ error: "Session recovery failed. Please try again." });
-            }
-        } catch (err) {
-            safeDeleteFile(filePath);
-            return res.status(400).json({ error: "Failed to recover session: " + err.message });
-        }
-    }
-
-    if ((!target && !groupId) || !filePath || !targetType || !delaySec) {
+    if (!target || !filePath || !targetType || !delaySec) {
         safeDeleteFile(filePath);
         return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const { client: waClient } = sessionInfo;
-    
-    // Use groupId if provided, otherwise use target
-    let finalTarget = target;
-    if (groupId && targetType === "group") {
-        finalTarget = groupId;
-    }
-    
-    if (!finalTarget) {
-        safeDeleteFile(filePath);
-        return res.status(400).json({ error: "No target specified" });
-    }
-
-    // SIMPLE TASK ID
-    const taskId = `TASK_${Date.now()}`;
-
     let messages;
     try {
-        messages = fs.readFileSync(filePath, "utf-8").split("\n").map(m => m.trim()).filter(Boolean);
+        const fileContent = fs.readFileSync(filePath, "utf-8");
+        messages = fileContent.split("\n")
+            .map(m => m.trim())
+            .filter(m => m.length > 0);
+            
         if (messages.length === 0) throw new Error("Message file empty");
     } catch (err) {
         safeDeleteFile(filePath);
-        return res.status(400).json({ error: "Invalid message file" });
+        return res.status(400).json({ error: "Invalid message file: " + err.message });
     }
+
+    const taskId = `TASK_${Date.now()}`;
 
     const taskInfo = {
         taskId,
@@ -402,14 +381,11 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
         stopRequested: false,
         totalMessages: messages.length,
         sentMessages: 0,
-        target: finalTarget,
+        target: target,
         targetType,
         prefix: prefix || "",
         startTime: new Date(),
-        lastUpdate: new Date(),
-        groupId: groupId || null,
-        retryCount: 0,
-        maxRetries: 5
+        lastUpdate: new Date()
     };
 
     activeTasks.set(taskId, taskInfo);
@@ -424,11 +400,9 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
 
     console.log(`🚀 Task STARTED: ${taskId}`);
     console.log(`📝 Messages: ${messages.length}`);
-    console.log(`🎯 Target: ${finalTarget}`);
-    console.log(`⏰ Delay: ${delaySec}s`);
-    console.log(`👤 User: ${taskInfo.ownerId}`);
+    console.log(`🎯 Target: ${target}`);
 
-    // ENHANCED Task execution with better error handling
+    // Simplified task execution
     (async () => {
         try {
             for (let index = 0; index < messages.length && !taskInfo.stopRequested; index++) {
@@ -440,74 +414,27 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
                         ? (taskInfo.target.includes('@g.us') ? taskInfo.target : taskInfo.target + '@g.us')
                         : (taskInfo.target.includes('@s.whatsapp.net') ? taskInfo.target : taskInfo.target + '@s.whatsapp.net');
 
-                    // SEND MESSAGE WITH RETRY LOGIC
-                    let sent = false;
-                    let attempts = 0;
+                    await sessionInfo.client.sendMessage(recipient, { text: msg });
+
+                    taskInfo.sentMessages++;
+                    taskInfo.lastUpdate = new Date();
                     
-                    while (!sent && attempts < 3 && !taskInfo.stopRequested) {
-                        try {
-                            await waClient.sendMessage(recipient, { text: msg });
-                            sent = true;
-                            taskInfo.sentMessages++;
-                            taskInfo.lastUpdate = new Date();
-                            taskInfo.retryCount = 0; // Reset retry count on success
-                            
-                        } catch (sendErr) {
-                            attempts++;
-                            console.error(`[${taskId}] Send attempt ${attempts} failed:`, sendErr.message);
-                            
-                            if (attempts >= 3) {
-                                throw sendErr;
-                            }
-                            
-                            // Wait before retry
-                            await delay(2000 * attempts);
-                        }
-                    }
-                    
-                    // Show progress
-                    if (taskInfo.sentMessages % 10 === 0 || taskInfo.sentMessages === taskInfo.totalMessages) {
-                        console.log(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
+                    if (taskInfo.sentMessages % 10 === 0) {
+                        console.log(`[${taskId}] Progress: ${taskInfo.sentMessages}/${taskInfo.totalMessages}`);
                     }
                     
                 } catch (sendErr) {
-                    console.error(`[${taskId}] Send error:`, sendErr);
-                    taskInfo.error = sendErr?.message || String(sendErr);
-                    taskInfo.lastError = new Date();
+                    console.error(`[${taskId}] Send error:`, sendErr.message);
+                    taskInfo.error = sendErr.message;
                     
-                    // ENHANCED ERROR HANDLING
-                    if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected") || sendErr.message?.includes("not connected")) {
-                        console.log(`[${taskId}] Session disconnected. Attempting to recover...`);
-                        
-                        // Attempt to recover session
-                        taskInfo.retryCount++;
-                        if (taskInfo.retryCount <= taskInfo.maxRetries) {
-                            console.log(`[${taskId}] Recovery attempt ${taskInfo.retryCount}/${taskInfo.maxRetries}`);
-                            await initializeClient(sessionId, sessionInfo, true);
-                            await delay(5000); // Wait for reconnection
-                            index--; // Retry the same message
-                            continue;
-                        } else {
-                            console.log(`[${taskId}] Max recovery attempts reached`);
-                            taskInfo.stopRequested = true;
-                            taskInfo.error = "Session disconnected and recovery failed.";
-                        }
-                    } else if (sendErr.message?.includes("rate limit") || sendErr.message?.includes("too many")) {
-                        console.log(`[${taskId}] Rate limit detected. Waiting 60 seconds...`);
-                        await delay(60000); // Wait 1 minute for rate limit
-                        index--; // Retry the same message
-                        continue;
+                    if (sendErr.message?.includes("closed") || sendErr.message?.includes("disconnected")) {
+                        taskInfo.stopRequested = true;
+                        taskInfo.error = "Session disconnected.";
                     }
                 }
 
-                // ENHANCED DELAY WITH PROGRESS CHECK
                 const waitMs = parseFloat(delaySec) * 1000;
-                const chunkSize = 1000; // Check every second if stopped
-                const chunks = Math.ceil(waitMs / chunkSize);
-                
-                for (let t = 0; t < chunks && !taskInfo.stopRequested; t++) {
-                    await delay(chunkSize);
-                }
+                await delay(waitMs);
                 
                 if (taskInfo.stopRequested) break;
             }
@@ -518,75 +445,212 @@ app.post("/send-message", upload.single("messageFile"), async (req, res) => {
             safeDeleteFile(filePath);
             
             const status = taskInfo.stopRequested ? "STOPPED" : "COMPLETED";
-            const duration = Math.round((taskInfo.endTime - taskInfo.startTime) / 1000);
+            console.log(`[${taskId}] ${status}: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent`);
             
-            console.log(`[${taskId}] ${status}: ${taskInfo.sentMessages}/${taskInfo.totalMessages} messages sent in ${duration}s`);
-            
-            // Keep task in memory for 30 minutes for status checking
             setTimeout(() => {
                 if (activeTasks.has(taskId)) {
                     activeTasks.delete(taskId);
-                    console.log(`[${taskId}] Removed from memory`);
                 }
-            }, 30 * 60 * 1000);
+            }, 600000);
         }
     })();
 });
 
-// --- REST OF YOUR ENDPOINTS REMAIN THE SAME ---
-// (Keep all your existing endpoints for /user-sessions, /groups, /refresh-groups, 
-// /code, /task-status, /user-tasks, /stop-task, /delete-session, /user-stats, 
-// /cleanup-session, /admin/users, /health)
+// --- SIMPLIFIED TASK STATUS ---
+app.get("/task-status", (req, res) => {
+    const taskId = req.query.taskId;
+    const userId = req.query.userId;
+    
+    if (!taskId) return res.status(400).json({ error: "Task ID is required" });
+    
+    if (!activeTasks.has(taskId)) {
+        return res.status(404).json({ error: "Task not found" });
+    }
 
-// ... [REST OF YOUR EXISTING ENDPOINTS HERE - NO CHANGES NEEDED]
+    const taskInfo = activeTasks.get(taskId);
+    
+    if (userId && taskInfo.ownerId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+    }
 
-// ENHANCED SHUTDOWN HANDLER
+    res.json({
+        taskId: taskInfo.taskId,
+        status: taskInfo.isSending ? "sending" : (taskInfo.stopRequested ? "stopped" : "completed"),
+        sentMessages: taskInfo.sentMessages,
+        totalMessages: taskInfo.totalMessages,
+        progress: Math.round((taskInfo.sentMessages / taskInfo.totalMessages) * 100),
+        startTime: taskInfo.startTime,
+        endTime: taskInfo.endTime,
+        error: taskInfo.error
+    });
+});
+
+// --- STOP TASK ---
+app.post("/stop-task", express.json(), async (req, res) => {
+    const { taskId, userId } = req.body;
+    
+    if (!taskId) {
+        return res.status(400).json({ error: "Task ID is required" });
+    }
+    
+    if (!activeTasks.has(taskId)) {
+        return res.status(404).json({ error: `Task ${taskId} not found` });
+    }
+
+    const taskInfo = activeTasks.get(taskId);
+    
+    if (userId && taskInfo.ownerId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+    }
+    
+    taskInfo.stopRequested = true;
+    taskInfo.isSending = false;
+    taskInfo.endTime = new Date();
+
+    console.log(`🛑 Task STOPPED: ${taskId}`);
+
+    return res.json({ 
+        success: true, 
+        message: `Task ${taskId} stopped successfully`,
+        sentMessages: taskInfo.sentMessages,
+        totalMessages: taskInfo.totalMessages
+    });
+});
+
+// --- USER SESSIONS ---
+app.get("/user-sessions", (req, res) => {
+    const userId = req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const userSession = getUserSession(userId);
+    const sessions = [...activeClients.entries()]
+        .filter(([_, info]) => info.ownerId === userId)
+        .map(([id, info]) => ({
+            sessionId: id,
+            number: info.number,
+            registered: info.registered,
+            pairingCode: info.pairingCode || "WAITING...",
+            isConnecting: info.isConnecting || false
+        }));
+
+    res.json({
+        userId: userId,
+        sessions: sessions,
+        total: sessions.length
+    });
+});
+
+// --- USER TASKS ---
+app.get("/user-tasks", (req, res) => {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+    const userTasks = [...activeTasks.entries()]
+        .filter(([_, task]) => task.ownerId === userId)
+        .map(([id, task]) => ({
+            taskId: id,
+            sessionId: task.sessionId,
+            isSending: task.isSending,
+            sentMessages: task.sentMessages,
+            totalMessages: task.totalMessages,
+            startTime: task.startTime,
+            progress: Math.round((task.sentMessages / task.totalMessages) * 100)
+        }));
+    
+    res.json({ 
+        tasks: userTasks,
+        total: userTasks.length
+    });
+});
+
+// --- DELETE SESSION ---
+app.post("/delete-session", express.json(), async (req, res) => {
+    const { sessionId, userId } = req.body;
+    
+    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+    
+    if (!activeClients.has(sessionId)) {
+        return res.status(404).json({ error: "Session not found" });
+    }
+
+    const sessionInfo = activeClients.get(sessionId);
+    
+    if (sessionInfo.ownerId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+    }
+
+    try {
+        if (sessionInfo.client) {
+            sessionInfo.client.end();
+        }
+        
+        if (sessionInfo.authPath && fs.existsSync(sessionInfo.authPath)) {
+            fs.rmSync(sessionInfo.authPath, { recursive: true, force: true });
+        }
+        
+        activeClients.delete(sessionId);
+        
+        res.json({ 
+            success: true, 
+            message: `Session ${sessionId} deleted successfully` 
+        });
+        
+    } catch (err) {
+        console.error(`❌ Error deleting session ${sessionId}:`, err);
+        res.status(500).json({ error: "Failed to delete session" });
+    }
+});
+
+// --- HEALTH CHECK ---
+app.get("/health", (req, res) => {
+    res.json({
+        status: "OK",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        stats: {
+            totalUsers: userSessions.size,
+            totalSessions: activeClients.size,
+            totalTasks: activeTasks.size
+        }
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+    console.error('Server Error:', error);
+    res.status(500).json({ 
+        error: 'Internal Server Error',
+        message: error.message
+    });
+});
+
 process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down gracefully...');
     
-    // Stop all heartbeats
-    activeClients.forEach((sessionInfo, sessionId) => {
-        if (sessionInfo.heartbeatInterval) {
-            clearInterval(sessionInfo.heartbeatInterval);
-            console.log(`❤️ Stopped heartbeat for: ${sessionId}`);
-        }
-        if (sessionInfo.reconnectTimeout) {
-            clearTimeout(sessionInfo.reconnectTimeout);
-        }
-    });
-    
-    // Close all WhatsApp connections
     activeClients.forEach(({ client }, sessionId) => {
         try { 
             if (client) {
                 client.end(); 
-                console.log(`🔌 Closed WhatsApp session: ${sessionId}`);
             }
         } catch (e) { 
             console.error(`Error closing session ${sessionId}:`, e);
         }
     });
     
-    // Cleanup temp files
-    try {
-        if (fs.existsSync('uploads')) {
-            fs.rmSync('uploads', { recursive: true, force: true });
-            console.log('🧹 Cleaned up uploads directory');
-        }
-    } catch (e) {
-        console.error('Error cleaning up uploads:', e);
-    }
-    
     console.log('✅ Server shutdown complete');
     process.exit(0);
 });
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 WhatsApp Bulk Server - UNLIMITED UPTIME VERSION!`);
-    console.log(`📍 Server running at http://localhost:${PORT}`);
-    console.log(`✅ UPTIME FIXED - Connection will stay alive indefinitely`);
-    console.log(`❤️ Heartbeat system activated`);
-    console.log(`🔄 Auto-reconnection enabled`);
-    console.log(`🔧 Enhanced error recovery implemented`);
-    console.log(`\n⚡ Ready for unlimited message sending!`);
+    console.log(`\n🚀 WhatsApp Bulk Server Started!`);
+    console.log(`📍 http://localhost:${PORT}`);
+    console.log(`✅ Fixed version - String pattern error resolved`);
 });
